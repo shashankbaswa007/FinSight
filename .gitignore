@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Sensitive configuration files
+src/main/resources/application.properties
+src/main/resources/data.sql
+docker-compose.yml
+.env
+.env.local
+.env.*
