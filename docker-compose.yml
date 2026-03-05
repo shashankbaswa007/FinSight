@@ -1,0 +1,63 @@
+# ═══════════════════════════════════════════════════════════════
+# FinSight – Docker Compose
+# Starts MySQL, Redis, and the Spring Boot application.
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.9'
+
+services:
+  # ──── MySQL Database ────
+  mysql:
+    image: mysql:8.0
+    container_name: finsight-mysql
+    environment:
+      MYSQL_DATABASE: finsight
+      MYSQL_USER: finsight_user
+      MYSQL_PASSWORD: finsight_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "finsight_user", "-pfinsight_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──── Redis (optional caching) ────
+  redis:
+    image: redis:7-alpine
+    container_name: finsight-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──── FinSight Application ────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finsight-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/finsight?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: finsight_user
+      SPRING_DATASOURCE_PASSWORD: finsight_pass
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      # Uncomment to enable Redis caching:
+      # SPRING_CACHE_TYPE: redis
+      # SPRING_DATA_REDIS_HOST: redis
+      # SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  mysqldata:
