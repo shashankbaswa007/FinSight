@@ -23,8 +23,8 @@ export default function Modal({ open, onClose, title, children, maxWidth = 'max-
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative w-full ${maxWidth} card p-6 animate-slide-up`}>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className={`relative w-full ${maxWidth} card p-6 animate-scale-in`}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
           <button

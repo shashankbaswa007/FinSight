@@ -103,6 +103,27 @@ public class BudgetService {
         }).collect(Collectors.toList());
     }
 
+    /** Update an existing budget's limit. */
+    @Transactional
+    public BudgetResponse updateBudget(Long userId, Long budgetId, BudgetRequest request) {
+        Budget budget = budgetRepository.findById(budgetId)
+                .filter(b -> b.getUser().getId().equals(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Budget", "id", budgetId));
+
+        budget.setMonthlyLimit(request.getMonthlyLimit());
+        budget = budgetRepository.save(budget);
+        return mapToResponse(budget);
+    }
+
+    /** Delete a budget. */
+    @Transactional
+    public void deleteBudget(Long userId, Long budgetId) {
+        Budget budget = budgetRepository.findById(budgetId)
+                .filter(b -> b.getUser().getId().equals(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Budget", "id", budgetId));
+        budgetRepository.delete(budget);
+    }
+
     private BudgetResponse mapToResponse(Budget budget) {
         return BudgetResponse.builder()
                 .id(budget.getId())

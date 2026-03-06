@@ -8,6 +8,8 @@ import TransactionsPage from './pages/TransactionsPage';
 import BudgetsPage from './pages/BudgetsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import CategoriesPage from './pages/CategoriesPage';
+import RecurringPage from './pages/RecurringPage';
+import SettingsPage from './pages/SettingsPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -34,6 +36,8 @@ export default function App() {
         <Route path="budgets" element={<BudgetsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="categories" element={<CategoriesPage />} />
+        <Route path="recurring" element={<RecurringPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

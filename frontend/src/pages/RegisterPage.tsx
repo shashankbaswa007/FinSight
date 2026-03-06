@@ -22,7 +22,7 @@ export default function RegisterPage() {
       login(data);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export default function RegisterPage() {
 
       {/* Right panel – form */}
       <div className="flex w-full lg:w-1/2 items-center justify-center p-6 sm:p-12 bg-white dark:bg-slate-900">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md animate-slide-up">
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600">
               <TrendingUp className="h-5 w-5 text-white" />

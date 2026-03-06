@@ -34,33 +34,38 @@
 
 @layer components {
   .card {
-    @apply bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm;
+    @apply bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm
+           transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-md hover:-translate-y-0.5 hover:border-gray-300 dark:hover:border-slate-600;
   }
 
   .btn-primary {
     @apply bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-200 
            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900
-           disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
+           disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] hover:shadow-md;
   }
 
   .btn-secondary {
     @apply bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200
            font-medium px-4 py-2.5 rounded-lg transition-all duration-200 
            focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900
-           active:scale-[0.98];
+           active:scale-[0.97];
   }
 
   .btn-danger {
     @apply bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2.5 rounded-lg transition-all duration-200 
            focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900
-           active:scale-[0.98];
+           active:scale-[0.97] hover:shadow-md;
   }
 
   .input-field {
     @apply w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600
            rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500
            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-           transition-all duration-200;
+           transition-all duration-200 hover:border-gray-400 dark:hover:border-slate-500;
   }
 
   .badge {
@@ -74,6 +79,23 @@
   .badge-expense {
     @apply badge bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400;
   }
+
+  /* Skeleton loading shimmer */
+  .skeleton {
+    @apply bg-gray-200 dark:bg-slate-700 rounded-lg animate-pulse;
+  }
+
+  /* Page enter animation */
+  .page-enter {
+    @apply animate-fade-in;
+  }
+
+  /* Staggered grid children */
+  .stagger-grid > :nth-child(1) { @apply animate-stagger-1; }
+  .stagger-grid > :nth-child(2) { @apply animate-stagger-2; }
+  .stagger-grid > :nth-child(3) { @apply animate-stagger-3; }
+  .stagger-grid > :nth-child(4) { @apply animate-stagger-4; }
+  .stagger-grid > :nth-child(n+5) { @apply animate-stagger-4; }
 }
 
 /* Custom scrollbar */

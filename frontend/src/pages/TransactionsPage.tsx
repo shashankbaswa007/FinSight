@@ -4,6 +4,7 @@ import { transactionApi } from '../api/transactions';
 import { categoryApi } from '../api/categories';
 import type { TransactionResponse, CategoryResponse } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { useToast } from '../context/ToastContext';
 import Modal from '../components/ui/Modal';
 
 interface Filters {
@@ -18,6 +19,7 @@ interface Filters {
 const PAGE_SIZE = 10;
 
 export default function TransactionsPage() {
+  const { toast } = useToast();
   const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
@@ -38,7 +40,9 @@ export default function TransactionsPage() {
       const res = await transactionApi.list(filters);
       setTransactions(res.content);
       setTotalPages(res.totalPages);
-    } catch { /* ignore */ } finally { setLoading(false); }
+    } catch {
+      toast('error', 'Failed to load transactions');
+    } finally { setLoading(false); }
   }, [filters]);
 
   useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
@@ -55,8 +59,7 @@ export default function TransactionsPage() {
 
   function openEdit(tx: TransactionResponse) {
     setEditing(tx);
-    const cat = categories.find((c) => c.name === tx.categoryName);
-    setForm({ amount: String(tx.amount), type: tx.type as 'INCOME' | 'EXPENSE', categoryId: cat ? String(cat.id) : '', date: tx.date, description: tx.description || '' });
+    setForm({ amount: String(tx.amount), type: tx.type as 'INCOME' | 'EXPENSE', categoryId: String(tx.categoryId), date: tx.date, description: tx.description || '' });
     setModalOpen(true);
   }
 
@@ -73,25 +76,32 @@ export default function TransactionsPage() {
       };
       if (editing) {
         await transactionApi.update(editing.id, payload);
+        toast('success', 'Transaction updated');
       } else {
         await transactionApi.create(payload);
+        toast('success', 'Transaction created');
       }
       setModalOpen(false);
       fetchTransactions();
-    } catch { /* ignore */ } finally { setSaving(false); }
+    } catch {
+      toast('error', 'Failed to save transaction');
+    } finally { setSaving(false); }
   }
 
   async function handleDelete() {
     if (!deleteTarget) return;
     try {
       await transactionApi.delete(deleteTarget.id);
+      toast('success', 'Transaction deleted');
       setDeleteTarget(null);
       fetchTransactions();
-    } catch { /* ignore */ }
+    } catch {
+      toast('error', 'Failed to delete transaction');
+    }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -109,7 +119,7 @@ export default function TransactionsPage() {
           <Filter className="h-4 w-4" /> {showFilters ? 'Hide Filters' : 'Show Filters'}
         </button>
         {showFilters && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 animate-slide-down">
             <select className="input-field" value={filters.type || ''} onChange={(e) => setFilters({ ...filters, page: 0, type: e.target.value ? e.target.value as 'INCOME'|'EXPENSE' : undefined })}>
               <option value="">All Types</option>
               <option value="INCOME">Income</option>
@@ -135,7 +145,7 @@ export default function TransactionsPage() {
             <p className="text-sm text-gray-400 dark:text-slate-500">No transactions found.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto animate-fade-in">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">

@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Plus, Tag, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { categoryApi } from '../api/categories';
 import type { CategoryResponse } from '../types';
+import { useToast } from '../context/ToastContext';
 import Modal from '../components/ui/Modal';
 
 export default function CategoriesPage() {
+  const { toast } = useToast();
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -17,7 +19,9 @@ export default function CategoriesPage() {
     try {
       const data = await categoryApi.list();
       setCategories(data);
-    } catch { /* ignore */ } finally { setLoading(false); }
+    } catch {
+      toast('error', 'Failed to load categories');
+    } finally { setLoading(false); }
   }
 
   useEffect(() => { load(); }, []);
@@ -33,8 +37,11 @@ export default function CategoriesPage() {
       await categoryApi.create({ name: form.name, type: form.type });
       setModalOpen(false);
       setForm({ name: '', type: 'EXPENSE' });
+      toast('success', 'Category created');
       load();
-    } catch { /* ignore */ } finally { setSaving(false); }
+    } catch {
+      toast('error', 'Failed to create category');
+    } finally { setSaving(false); }
   }
 
   if (loading) {
@@ -46,7 +53,7 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -87,9 +94,9 @@ export default function CategoriesPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 stagger-grid">
           {filtered.map((cat) => (
-            <div key={cat.id} className="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div key={cat.id} className="card-hover p-5 flex items-center gap-4">
               <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
                 cat.type === 'INCOME'
                   ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
@@ -118,7 +125,8 @@ export default function CategoriesPage() {
             <input
               type="text"
               required
-              maxLength={50}
+              minLength={2}
+              maxLength={100}
               className="input-field"
               placeholder="e.g. Subscriptions"
               value={form.name}

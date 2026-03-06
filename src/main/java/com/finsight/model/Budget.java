@@ -10,7 +10,7 @@ import java.math.BigDecimal;
  */
 @Entity
 @Table(name = "budgets", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "category_id", "month", "year"})
+        @UniqueConstraint(columnNames = {"user_id", "category_id", "budget_month", "budget_year"})
 })
 public class Budget {
 
@@ -29,10 +29,10 @@ public class Budget {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal monthlyLimit;
 
-    @Column(nullable = false)
+    @Column(name = "budget_month", nullable = false)
     private Integer month;
 
-    @Column(nullable = false)
+    @Column(name = "budget_year", nullable = false)
     private Integer year;
 
     public Budget() {}

@@ -21,7 +21,7 @@ export default function LoginPage() {
       login(data);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid email or password');
+      setError(err.response?.data?.message || err.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ export default function LoginPage() {
           </p>
           <div className="mt-12 grid grid-cols-3 gap-4">
             {['Transactions', 'Budgets', 'Analytics'].map((f) => (
-              <div key={f} className="rounded-xl bg-white/10 backdrop-blur-sm p-4 text-center">
+              <div key={f} className="rounded-xl bg-white/10 backdrop-blur-sm p-4 text-center hover:bg-white/20 transition-colors cursor-default">
                 <p className="text-sm font-medium text-brand-100">{f}</p>
               </div>
             ))}
@@ -56,7 +56,7 @@ export default function LoginPage() {
 
       {/* Right panel – form */}
       <div className="flex w-full lg:w-1/2 items-center justify-center p-6 sm:p-12 bg-white dark:bg-slate-900">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md animate-slide-up">
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600">
               <TrendingUp className="h-5 w-5 text-white" />

@@ -1,46 +1,82 @@
 # FinSight – Personal Finance Analytics Platform
 
-A production-grade **fintech backend system** built with Java Spring Boot that helps users manage personal finances by tracking transactions, budgets, and financial insights. All components are free, open-source, and runnable locally.
+A production-grade **full-stack fintech application** built with Java Spring Boot and React that helps users track transactions, manage budgets, analyze spending patterns, and receive anomaly alerts. Designed with banking-grade practices: versioned database migrations, idempotent API operations, immutable audit trails, and comprehensive test coverage.
 
 ---
 
 ## Tech Stack
 
+### Backend
 | Technology | Purpose |
 |---|---|
-| Java 21 (LTS) | Language |
-| Spring Boot 3.4 | Application framework |
-| Spring Data JPA | Database access |
+| Java 17 (LTS) | Language |
+| Spring Boot 3.4.3 | Application framework |
+| Spring Data JPA | Database access (Hibernate ORM) |
 | Spring Security | Authentication & authorization |
-| JWT (jjwt 0.12) | Stateless token auth |
+| JWT (jjwt 0.12.6) | Stateless token authentication |
 | MySQL 8.0 | Relational database |
-| Hibernate | ORM |
-| Maven | Build tool |
-| Lombok | Boilerplate reduction |
-| Spring Validation | Input validation |
-| Spring Boot Actuator | Monitoring |
-| springdoc-openapi | Swagger UI |
-| Redis | Optional caching |
-| Docker & Compose | Containerized deployment |
+| Flyway | Versioned database migrations |
+| Spring Validation | Input validation with Bean Validation |
+| Spring Boot Actuator | Health checks & metrics |
+| springdoc-openapi 2.8 | Swagger UI / OpenAPI 3.0 docs |
+| Redis | Optional response caching |
+| Maven | Build & dependency management |
+
+### Frontend
+| Technology | Purpose |
+|---|---|
+| React 18 | UI framework |
+| TypeScript 5.6 | Type-safe JavaScript |
+| Vite 6.0 | Build tool & dev server |
+| Tailwind CSS 3.4 | Utility-first styling |
+| Recharts 2.15 | Interactive charts & analytics |
+| React Router v6 | Client-side routing |
+| Lucide React | Icon library |
 
 ---
 
 ## Architecture
 
 ```
-src/main/java/com/finsight/
-├── config/          # OpenAPI, Redis configuration
-├── controller/      # REST API endpoints
-├── dto/             # Request/response data transfer objects
-├── exception/       # Global exception handling
-├── model/           # JPA entity classes & enums
-├── repository/      # Spring Data JPA repositories
-├── security/        # JWT provider, filter, security config
-├── service/         # Business logic layer
-└── util/            # Helper utilities
+┌───────────────────────────────────────────────────────────┐
+│                     React Frontend                         │
+│  (TypeScript + Vite + Tailwind CSS + Recharts)            │
+│  Pages: Dashboard, Transactions, Budgets, Analytics,      │
+│         Recurring, Profile, Login/Register                │
+└──────────────────────┬────────────────────────────────────┘
+                       │ REST API (JSON over HTTPS)
+                       ▼
+┌───────────────────────────────────────────────────────────┐
+│                  Spring Boot Backend                       │
+│                                                           │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐   │
+│  │ Controllers  │→│  Services    │→│  Repositories  │   │
+│  │ (REST API)  │  │ (Biz Logic)  │  │ (Spring Data)  │   │
+│  └─────────────┘  └──────────────┘  └────────┬───────┘   │
+│         ↑                                     │           │
+│  ┌──────┴──────────────────────────┐          ▼           │
+│  │ Security Layer                  │   ┌──────────────┐   │
+│  │ • JWT Auth Filter               │   │  MySQL 8.0   │   │
+│  │ • Rate Limiter (100 req/min)    │   │  (Flyway     │   │
+│  │ • Audit Log Filter              │   │   managed)   │   │
+│  │ • Idempotency Filter            │   └──────────────┘   │
+│  └─────────────────────────────────┘                      │
+└───────────────────────────────────────────────────────────┘
 ```
 
-**Flow:** Controller → Service → Repository → Database
+### Package Structure
+```
+src/main/java/com/finsight/
+├── config/          # AuditLogFilter, CORS, DemoDataSeeder, OpenAPI, Redis
+├── controller/      # 9 REST controllers (Auth, Transaction, Budget, Analytics, ...)
+├── dto/             # 25+ request/response DTOs with validation
+├── exception/       # GlobalExceptionHandler, custom exceptions
+├── model/           # JPA entities, enums, audit trail
+├── repository/      # Spring Data JPA repositories with custom queries
+├── security/        # JWT, RateLimiting, Idempotency, SecurityConfig
+├── service/         # 8 service classes (Transaction, Analytics, Export, ...)
+└── util/            # SecurityUtil, DateUtil
+```
 
 ---
 
@@ -50,32 +86,82 @@ src/main/java/com/finsight/
 ┌──────────┐       ┌──────────────┐       ┌────────────┐
 │  users   │───1:N─│ transactions │───N:1─│ categories │
 └──────────┘       └──────────────┘       └────────────┘
-     │                                          │
-     └──────1:N────┐                   ┌───N:1──┘
-                   │                   │
-              ┌────────────┐
-              │  budgets   │
-              └────────────┘
+     │                    │                      │
+     ├──1:N──┐            │               ┌─N:1──┘
+     │       ▼            ▼               ▼
+     │  ┌────────┐  ┌──────────────────┐
+     │  │budgets │  │transaction_audit │  ← Immutable audit trail
+     │  └────────┘  │      _log        │
+     │              └──────────────────┘
+     └──1:N──┐
+             ▼
+     ┌───────────────────┐    ┌───────────────────┐
+     │recurring_          │    │ idempotency_keys  │  ← Dedup for POST requests
+     │   transactions     │    └───────────────────┘
+     └───────────────────┘
 ```
+
+**Migrations:** Managed by Flyway (`V1__init_schema.sql`, `V2__transaction_audit_trail.sql`, `V3__idempotency_keys.sql`)
 
 ---
 
-## API Endpoints
+## API Endpoints (40+)
 
 ### Authentication
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register a new user |
-| POST | `/api/auth/login` | Login and receive JWT |
+| POST | `/api/auth/register` | Register (name, email, password) |
+| POST | `/api/auth/login` | Login → JWT token |
 
 ### Transactions
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/transactions` | Add a transaction |
-| PUT | `/api/transactions/{id}` | Update a transaction |
-| DELETE | `/api/transactions/{id}` | Delete a transaction |
-| GET | `/api/transactions` | List (paginated, filterable) |
-| GET | `/api/transactions/monthly` | Monthly summary |
+| POST | `/api/transactions` | Create transaction (supports `X-Idempotency-Key`) |
+| PUT | `/api/transactions/{id}` | Update transaction |
+| DELETE | `/api/transactions/{id}` | Delete transaction |
+| GET | `/api/transactions` | List (paginated, filter by type/category/date) |
+| GET | `/api/transactions/monthly` | Monthly income vs expense summary |
+
+### Budgets
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/budgets` | Set a monthly budget |
+| GET | `/api/budgets` | List all budgets |
+| PUT | `/api/budgets/{id}` | Update a budget |
+| DELETE | `/api/budgets/{id}` | Delete a budget |
+| GET | `/api/budgets/status` | Budget vs actual spending |
+
+### Analytics (9 endpoints)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/analytics/monthly-summary` | Income, expenses, net savings, ratio |
+| GET | `/api/analytics/top-categories` | Top spending categories |
+| GET | `/api/analytics/spending-trends` | Monthly income/expense trends |
+| GET | `/api/analytics/anomaly-detection` | Z-score anomaly detection |
+| GET | `/api/analytics/month-over-month` | MoM income/expense comparison |
+| GET | `/api/analytics/daily-spending` | Daily expense breakdown |
+| GET | `/api/analytics/category-trends` | Category spending over months |
+| GET | `/api/analytics/expense-distribution` | Amount-range distribution buckets |
+| GET | `/api/analytics/top-descriptions` | Top merchants/descriptions |
+
+### Recurring Transactions
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/recurring` | Create recurring transaction |
+| GET | `/api/recurring` | List recurring transactions |
+| PUT | `/api/recurring/{id}/deactivate` | Deactivate a recurring schedule |
+
+### Profile Management
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/profile` | Get current user profile |
+| PUT | `/api/profile` | Update name/email |
+| PUT | `/api/profile/password` | Change password |
+
+### Export
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/export/transactions/csv` | Export transactions to CSV |
 
 ### Categories
 | Method | Endpoint | Description |
@@ -83,20 +169,40 @@ src/main/java/com/finsight/
 | POST | `/api/categories` | Create a category |
 | GET | `/api/categories` | List all categories |
 
-### Budgets
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/budgets` | Set a monthly budget |
-| GET | `/api/budgets` | List all budgets |
-| GET | `/api/budgets/status` | Budget vs actual spending |
+---
 
-### Analytics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/analytics/monthly-summary` | Income, expenses, savings |
-| GET | `/api/analytics/top-categories` | Top spending categories |
-| GET | `/api/analytics/spending-trends` | Monthly trends (last N months) |
-| GET | `/api/analytics/anomaly-detection` | Z-score anomaly detection |
+## Key Features
+
+### Financial Management
+- **Transaction CRUD** with pagination, multi-field filtering, and monthly summaries
+- **Budget tracking** – set monthly limits per category with real-time overspend detection
+- **Recurring transactions** – auto-generated daily/weekly/monthly/yearly via `@Scheduled`
+- **CSV export** of transaction history with optional date range
+
+### Analytics & Insights
+- **9 analytics endpoints** covering every angle of personal finance
+- **Anomaly detection** – z-score-based flagging with LOW/MEDIUM/HIGH severity
+- **Month-over-month comparison** – income/expense change with percentages
+- **Expense distribution** – bucketed spending analysis (₹0–500, ₹500–2K, etc.)
+- **Category trends** – multi-month stacked category spending
+- **Top merchants** – ranked by total spending amount
+
+### Banking-Grade Security & Compliance
+- **BCrypt** password hashing with complexity enforcement (uppercase, lowercase, digit, special char)
+- **JWT** stateless authentication (24h expiry, configurable secret)
+- **Rate limiting** – 100 requests/minute per IP
+- **Idempotency keys** – `X-Idempotency-Key` header for safe POST retries
+- **Immutable audit trail** – every transaction CREATE/UPDATE/DELETE is logged with old/new values, performer identity, and timestamp
+- **Sensitive data masking** – auth/password endpoints masked in audit logs
+- **CORS** configured for frontend origin
+
+### Engineering Quality
+- **Flyway migrations** – versioned, repeatable database schema management (no `ddl-auto=update`)
+- **60+ unit & integration tests** – services, controllers, repositories, validation
+- **Global exception handling** via `@ControllerAdvice` with structured error responses
+- **OpenAPI 3.0 / Swagger UI** for interactive API exploration
+- **Spring Boot Actuator** – health, info, and metrics endpoints
+- **Demo data seeder** – 100+ transactions, 6 budgets, 4 recurring transactions for testing
 
 ---
 
@@ -104,30 +210,16 @@ src/main/java/com/finsight/
 
 ### Prerequisites
 
-- **Java 21+** – `java -version`
+- **Java 17+** – `java -version`
 - **Maven 3.9+** – `mvn -version`
 - **MySQL 8.0+** – running on `localhost:3306`
-- **Docker** (optional) – for containerized setup
+- **Node.js 18+** – for the frontend (`node --version`)
 
-### Option 1: Run with Docker Compose (Recommended)
-
-```bash
-# Build the application
-./mvnw clean package -DskipTests
-
-# Start MySQL, Redis, and the application
-docker-compose up -d
-
-# App available at http://localhost:8080
-# Swagger UI at http://localhost:8080/swagger-ui.html
-```
-
-### Option 2: Run Locally
+### Backend Setup
 
 **1. Set up MySQL:**
 
 ```bash
-# Create database and user
 mysql -u root -p
 CREATE DATABASE finsight;
 CREATE USER 'finsight_user'@'localhost' IDENTIFIED BY 'finsight_pass';
@@ -136,21 +228,69 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-**2. Configure application:**
-
-Edit `src/main/resources/application.properties` if your DB credentials differ.
-
-**3. Run the application:**
+**2. Run the backend:**
 
 ```bash
+cd demo
 ./mvnw clean spring-boot:run
 ```
 
-**4. Access:**
+Flyway will automatically create all tables on first run.
+
+**3. Access:**
 
 - API: `http://localhost:8080`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Health check: `http://localhost:8080/actuator/health`
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend available at `http://localhost:5173`
+
+### Demo Account
+
+The app starts with demo data pre-seeded (profile `demo`):
+
+| Field | Value |
+|-------|-------|
+| Email | `demo@finsight.com` |
+| Password | `Demo@1234` |
+
+---
+
+## Running Tests
+
+```bash
+# Run all tests
+./mvnw test
+
+# Run with coverage report
+./mvnw test jacoco:report
+# Report at target/site/jacoco/index.html
+```
+
+### Test Coverage
+
+| Test File | Tests | Type |
+|-----------|-------|------|
+| `TransactionServiceTest` | 5 | Unit (Mockito) |
+| `BudgetServiceTest` | 5 | Unit (Mockito) |
+| `CategoryServiceTest` | 5 | Unit (Mockito) |
+| `AnalyticsServiceTest` | 12 | Unit (Mockito) |
+| `RecurringTransactionServiceTest` | 9 | Unit (Mockito) |
+| `ExportServiceTest` | 5 | Unit (Mockito) |
+| `AuthControllerIntegrationTest` | 7 | Integration (MockMvc + H2) |
+| `ProfileControllerIntegrationTest` | 6 | Integration (MockMvc + H2) |
+| `InputValidationTest` | 12 | Integration (MockMvc + H2) |
+| `TransactionRepositoryTest` | 4 | Repository (DataJpaTest + H2) |
+
+Tests use **H2 in-memory database** (MySQL compatibility mode) with Flyway disabled.
 
 ---
 
@@ -164,11 +304,11 @@ curl -X POST http://localhost:8080/api/auth/register \
   -d '{
     "name": "John Doe",
     "email": "john@example.com",
-    "password": "securePass123"
+    "password": "Secure@Pass1"
   }'
 ```
 
-**Response:**
+**Response (201 Created):**
 ```json
 {
   "token": "eyJhbGciOi...",
@@ -180,96 +320,68 @@ curl -X POST http://localhost:8080/api/auth/register \
 }
 ```
 
-### Login
-
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "john@example.com",
-    "password": "securePass123"
-  }'
-```
-
-### Add Transaction
+### Create Transaction (with idempotency key)
 
 ```bash
 curl -X POST http://localhost:8080/api/transactions \
-  -H "Authorization: Bearer <YOUR_JWT_TOKEN>" \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
   -H "Content-Type: application/json" \
+  -H "X-Idempotency-Key: txn-abc-123" \
   -d '{
-    "amount": 45.50,
+    "amount": 450.50,
     "type": "EXPENSE",
     "categoryId": 1,
-    "description": "Grocery shopping",
-    "date": "2026-03-05"
+    "description": "Grocery shopping at DMart",
+    "date": "2024-03-05"
   }'
 ```
 
-### Get Monthly Summary
+### Anomaly Detection
 
 ```bash
-curl http://localhost:8080/api/analytics/monthly-summary?month=3&year=2026 \
-  -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
-```
-
-**Response:**
-```json
-{
-  "month": 3,
-  "year": 2026,
-  "totalIncome": 5000.00,
-  "totalExpense": 2350.75,
-  "netSavings": 2649.25,
-  "incomeExpenseRatio": 2.13
-}
-```
-
-### Budget Status
-
-```bash
-curl "http://localhost:8080/api/budgets/status?month=3&year=2026" \
-  -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
+curl http://localhost:8080/api/analytics/anomaly-detection \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
 **Response:**
 ```json
 [
   {
-    "budgetId": 1,
-    "categoryName": "Food",
-    "monthlyLimit": 500.00,
-    "amountSpent": 320.50,
-    "remaining": 179.50,
-    "exceeded": false,
-    "month": 3,
-    "year": 2026
+    "transactionId": 42,
+    "amount": 15000.00,
+    "categoryName": "Shopping",
+    "description": "Electronics purchase",
+    "date": "2024-03-01",
+    "zScore": 3.45,
+    "severity": "MEDIUM"
   }
 ]
 ```
 
+### Error Response Format
+
+All errors follow a consistent structure:
+
+```json
+{
+  "status": 400,
+  "message": "Amount must be positive",
+  "timestamp": "2024-03-05T10:30:00"
+}
+```
+
 ---
 
-## Security
+## Security Considerations
 
-- **BCrypt** password hashing
-- **JWT** stateless authentication (24h expiry)
-- Role-based authorization (`USER`, `ADMIN`)
-- All financial data endpoints require a valid JWT
-- Custom `AuthenticationEntryPoint` for JSON 401 responses
-
----
-
-## Key Features
-
-- **Paginated transactions** with category and date range filters
-- **Monthly budget tracking** with overspend detection
-- **Financial analytics** – income/expense ratios, top categories, trends
-- **Anomaly detection** – z-score based identification of unusual spending
-- **Input validation** with meaningful error messages
-- **Global exception handling** via `@ControllerAdvice`
-- **Swagger UI** for interactive API exploration
-- **Docker Compose** for one-command setup
+- Passwords enforced: min 8 chars, uppercase, lowercase, digit, special character
+- JWT secret configurable via `JWT_SECRET` environment variable
+- Rate limiting prevents brute-force attacks (100 req/min per IP)
+- All transaction mutations logged in immutable audit trail
+- Sensitive endpoints (login, register, password change) masked in audit logs
+- CORS restricted to configured frontend origin
+- SQL injection prevented via parameterized JPA queries
+- Input validation on all request DTOs
 
 ---
 

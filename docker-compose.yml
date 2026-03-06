@@ -37,26 +37,39 @@ services:
       timeout: 5s
       retries: 5
 
-  # ──── FinSight Application ────
-  app:
+  # ──── FinSight Backend ────
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: finsight-app
+    container_name: finsight-backend
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/finsight?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: finsight_user
-      SPRING_DATASOURCE_PASSWORD: finsight_pass
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
-      # Uncomment to enable Redis caching:
-      # SPRING_CACHE_TYPE: redis
-      # SPRING_DATA_REDIS_HOST: redis
-      # SPRING_DATA_REDIS_PORT: 6379
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:mysql://mysql:3306/finsight?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DATABASE_USERNAME: finsight_user
+      DATABASE_PASSWORD: finsight_pass
+      JWT_SECRET: ${JWT_SECRET:-dGhpcyBpcyBhIHZlcnkgc2VjdXJlIGp3dCBzZWNyZXQga2V5IGZvciBmaW5zaWdodCBhcHA=}
+      CORS_ALLOWED_ORIGINS: http://localhost
+      SPRING_CACHE_TYPE: redis
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       mysql:
         condition: service_healthy
+    restart: on-failure
+
+  # ──── FinSight Frontend ────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: finsight-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     restart: on-failure
 
 volumes:

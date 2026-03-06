@@ -3,6 +3,8 @@ package com.finsight.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * DTO for a detected spending anomaly using z-score analysis.
  */
@@ -44,7 +46,9 @@ public class AnomalyResponse {
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
 
+    @JsonProperty("zScore")
     public double getZScore() { return zScore; }
+    @JsonProperty("zScore")
     public void setZScore(double zScore) { this.zScore = zScore; }
 
     public String getSeverity() { return severity; }

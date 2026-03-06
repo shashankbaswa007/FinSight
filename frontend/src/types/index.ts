@@ -125,3 +125,88 @@ export interface PagedResponse<T> {
   totalPages: number;
   last: boolean;
 }
+
+/* ───── Recurring Transactions ───── */
+export type RecurringFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
+
+export interface RecurringTransactionRequest {
+  amount: number;
+  type: TransactionType;
+  categoryId: number;
+  description?: string;
+  frequency: RecurringFrequency;
+  startDate: string;
+  endDate?: string;
+}
+
+export interface RecurringTransactionResponse {
+  id: number;
+  amount: number;
+  type: TransactionType;
+  categoryId: number;
+  categoryName: string;
+  description: string;
+  frequency: RecurringFrequency;
+  startDate: string;
+  endDate: string | null;
+  nextOccurrence: string;
+  active: boolean;
+}
+
+/* ───── Profile ───── */
+export interface ProfileResponse {
+  userId: number;
+  name: string;
+  email: string;
+  role: string;
+  createdAt: string;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  email?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/* ───── Month-over-Month ───── */
+export interface MonthOverMonthResponse {
+  currentMonth: number;
+  currentYear: number;
+  currentIncome: number;
+  currentExpense: number;
+  previousIncome: number;
+  previousExpense: number;
+  incomeChange: number;
+  expenseChange: number;
+  incomeChangePercent: number;
+  expenseChangePercent: number;
+}
+
+/* ───── Advanced Analytics ───── */
+export interface DailySpendingResponse {
+  date: string;
+  amount: number;
+}
+
+export interface CategoryTrendResponse {
+  month: number;
+  year: number;
+  categoryName: string;
+  totalAmount: number;
+}
+
+export interface ExpenseDistributionResponse {
+  range: string;
+  count: number;
+  totalAmount: number;
+}
+
+export interface TopDescriptionResponse {
+  description: string;
+  totalAmount: number;
+  count: number;
+}

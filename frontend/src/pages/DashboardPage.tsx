@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertTriangle, RefreshCw, Download, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { analyticsApi } from '../api/analytics';
 import { transactionApi } from '../api/transactions';
-import type { MonthlySummaryResponse, TopCategoryResponse, SpendingTrendResponse, TransactionResponse } from '../types';
+import { exportApi } from '../api/export';
+import type { MonthlySummaryResponse, TopCategoryResponse, SpendingTrendResponse, TransactionResponse, MonthOverMonthResponse } from '../types';
 import { formatCurrency, getCurrentMonthYear, getMonthName } from '../utils/formatters';
+import { useToast } from '../context/ToastContext';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -13,33 +15,56 @@ const COLORS = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'
 
 export default function DashboardPage() {
   const { month, year } = getCurrentMonthYear();
+  const { toast } = useToast();
   const [summary, setSummary] = useState<MonthlySummaryResponse | null>(null);
   const [topCats, setTopCats] = useState<TopCategoryResponse[]>([]);
   const [trends, setTrends] = useState<SpendingTrendResponse[]>([]);
   const [recentTx, setRecentTx] = useState<TransactionResponse[]>([]);
+  const [mom, setMom] = useState<MonthOverMonthResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [s, tc, tr, tx] = await Promise.all([
-          analyticsApi.monthlySummary(month, year),
-          analyticsApi.topCategories(month, year),
-          analyticsApi.spendingTrends(6),
-          transactionApi.list({ page: 0, size: 5 }),
-        ]);
-        setSummary(s);
-        setTopCats(tc);
-        setTrends(tr);
-        setRecentTx(tx.content);
-      } catch {
-        // API may 404 if no data yet – gracefully handle
-      } finally {
-        setLoading(false);
-      }
+  async function loadData(showRefresh = false) {
+    if (showRefresh) setRefreshing(true); else setLoading(true);
+    try {
+      const [s, tc, tr, tx, m] = await Promise.all([
+        analyticsApi.monthlySummary(month, year),
+        analyticsApi.topCategories(month, year),
+        analyticsApi.spendingTrends(6),
+        transactionApi.list({ page: 0, size: 5 }),
+        analyticsApi.monthOverMonth(month, year),
+      ]);
+      setSummary(s);
+      setTopCats(tc);
+      setTrends(tr);
+      setRecentTx(tx.content);
+      setMom(m);
+    } catch {
+      toast('error', 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    load();
-  }, [month, year]);
+  }
+
+  useEffect(() => { loadData(); }, [month, year]);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const blob = await exportApi.transactionsCsv();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transactions_${year}_${month}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('success', 'Transactions exported');
+    } catch {
+      toast('error', 'Export failed');
+    } finally { setExporting(false); }
+  }
 
   if (loading) {
     return (
@@ -58,28 +83,40 @@ export default function DashboardPage() {
   const pieData = topCats.map((c) => ({ name: c.categoryName, value: c.totalAmount }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <p className="text-gray-500 dark:text-slate-400 mt-1">
-          {getMonthName(month)} {year} overview
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-gray-500 dark:text-slate-400 mt-1">
+            {getMonthName(month)} {year} overview
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={handleExport} disabled={exporting} className="btn-secondary flex items-center gap-2 text-sm" title="Export CSV">
+            <Download className={`h-4 w-4 ${exporting ? 'animate-pulse' : ''}`} /> Export
+          </button>
+          <button onClick={() => loadData(true)} disabled={refreshing} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50" title="Refresh">
+            <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-grid">
         <SummaryCard
           title="Total Income"
           value={formatCurrency(summary?.totalIncome ?? 0)}
           icon={<TrendingUp className="h-5 w-5" />}
           color="emerald"
+          badge={mom ? { value: mom.incomeChangePercent, positive: mom.incomeChangePercent >= 0 } : undefined}
         />
         <SummaryCard
           title="Total Expenses"
           value={formatCurrency(summary?.totalExpense ?? 0)}
           icon={<TrendingDown className="h-5 w-5" />}
           color="red"
+          badge={mom ? { value: mom.expenseChangePercent, positive: mom.expenseChangePercent <= 0 } : undefined}
         />
         <SummaryCard
           title="Net Savings"
@@ -195,8 +232,9 @@ export default function DashboardPage() {
 
 /* ── Helper components ── */
 
-function SummaryCard({ title, value, icon, color, highlight }: {
+function SummaryCard({ title, value, icon, color, highlight, badge }: {
   title: string; value: string; icon: React.ReactNode; color: string; highlight?: boolean;
+  badge?: { value: number; positive: boolean };
 }) {
   const colorMap: Record<string, string> = {
     emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
@@ -206,7 +244,7 @@ function SummaryCard({ title, value, icon, color, highlight }: {
   };
 
   return (
-    <div className={`card p-5 ${highlight ? 'ring-2 ring-red-400' : ''}`}>
+    <div className={`card-hover p-5 ${highlight ? 'ring-2 ring-red-400' : ''}`}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-medium text-gray-500 dark:text-slate-400">{title}</span>
         <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${colorMap[color]}`}>
@@ -214,6 +252,12 @@ function SummaryCard({ title, value, icon, color, highlight }: {
         </div>
       </div>
       <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+      {badge && (
+        <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${badge.positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+          {badge.positive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+          {Math.abs(badge.value).toFixed(1)}% vs last month
+        </div>
+      )}
     </div>
   );
 }

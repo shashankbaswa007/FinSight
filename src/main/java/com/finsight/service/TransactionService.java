@@ -29,12 +29,14 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final CategoryService categoryService;
+    private final TransactionAuditService auditService;
 
     public TransactionService(TransactionRepository transactionRepository, UserRepository userRepository,
-                              CategoryService categoryService) {
+                              CategoryService categoryService, TransactionAuditService auditService) {
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.categoryService = categoryService;
+        this.auditService = auditService;
     }
 
     /** Create a new transaction linked to the authenticated user. */
@@ -53,6 +55,7 @@ public class TransactionService {
                 .build();
 
         transaction = transactionRepository.save(transaction);
+        auditService.logCreate(transaction, user.getEmail());
         return mapToResponse(transaction);
     }
 
@@ -60,6 +63,13 @@ public class TransactionService {
     @Transactional
     public TransactionResponse updateTransaction(Long userId, Long transactionId, TransactionRequest request) {
         Transaction transaction = findByIdAndUser(transactionId, userId);
+
+        // Capture old values before mutation
+        BigDecimal oldAmount = transaction.getAmount();
+        String oldType = transaction.getType().name();
+        String oldCategory = transaction.getCategory().getName();
+        String oldDescription = transaction.getDescription();
+
         Category category = categoryService.findById(request.getCategoryId());
 
         transaction.setAmount(request.getAmount());
@@ -69,6 +79,8 @@ public class TransactionService {
         transaction.setDate(request.getDate());
 
         transaction = transactionRepository.save(transaction);
+        auditService.logUpdate(transaction, oldAmount, oldType, oldCategory, oldDescription,
+                transaction, transaction.getUser().getEmail());
         return mapToResponse(transaction);
     }
 
@@ -76,6 +88,7 @@ public class TransactionService {
     @Transactional
     public void deleteTransaction(Long userId, Long transactionId) {
         Transaction transaction = findByIdAndUser(transactionId, userId);
+        auditService.logDelete(transaction, transaction.getUser().getEmail());
         transactionRepository.delete(transaction);
     }
 

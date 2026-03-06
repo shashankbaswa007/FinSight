@@ -7,14 +7,18 @@ import {
   Tags,
   X,
   TrendingUp,
+  Repeat,
+  Settings,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/budgets', label: 'Budgets', icon: Wallet },
+  { to: '/recurring', label: 'Recurring', icon: Repeat },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/categories', label: 'Categories', icon: Tags },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 interface SidebarProps {
@@ -55,16 +59,21 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             to={to}
             onClick={onClose}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+              `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
               ${
                 isActive
-                  ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400'
-                  : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 shadow-sm'
+                  : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700/50 hover:text-gray-900 dark:hover:text-white hover:translate-x-0.5'
               }`
             }
           >
-            <Icon className="h-5 w-5 flex-shrink-0" />
-            {label}
+            {({ isActive }) => (
+              <>
+                <Icon className={`h-5 w-5 flex-shrink-0 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
+                {label}
+                {isActive && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-600 dark:bg-brand-400" />}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

@@ -98,4 +98,36 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     /** Fetch all expense transactions for a user (used in anomaly detection). */
     List<Transaction> findByUserIdAndType(Long userId, TransactionType type);
+
+    /** Daily expense totals for a user within a date range. */
+    @Query("SELECT t.date, SUM(t.amount) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.type = 'EXPENSE' " +
+           "AND t.date BETWEEN :startDate AND :endDate " +
+           "GROUP BY t.date ORDER BY t.date")
+    List<Object[]> findDailySpending(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    /** Spending by category across months for a user. */
+    @Query("SELECT MONTH(t.date), YEAR(t.date), t.category.name, SUM(t.amount) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.type = 'EXPENSE' " +
+           "AND t.date BETWEEN :startDate AND :endDate " +
+           "GROUP BY YEAR(t.date), MONTH(t.date), t.category.name " +
+           "ORDER BY YEAR(t.date), MONTH(t.date)")
+    List<Object[]> findCategoryTrends(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    /** Top descriptions/merchants by total expense amount. */
+    @Query("SELECT t.description, SUM(t.amount), COUNT(t) FROM Transaction t " +
+           "WHERE t.user.id = :userId AND t.type = 'EXPENSE' " +
+           "AND t.date BETWEEN :startDate AND :endDate " +
+           "AND t.description IS NOT NULL AND t.description <> '' " +
+           "GROUP BY t.description ORDER BY SUM(t.amount) DESC")
+    List<Object[]> findTopDescriptions(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }
