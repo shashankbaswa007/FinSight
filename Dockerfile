@@ -1,9 +1,10 @@
 # ══════════════════════════════════════════════════════════════
 # FinSight Backend – Multi-stage Docker Build
+# Java 25 LTS (supports Sep 2034)
 # ══════════════════════════════════════════════════════════════
 
 # ── Stage 1: Build ──
-FROM eclipse-temurin:17-jdk-alpine AS builder
+FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /app
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
@@ -12,10 +13,11 @@ COPY src src
 RUN ./mvnw package -DskipTests -B
 
 # ── Stage 2: Run ──
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 LABEL maintainer="finsight-team"
 LABEL description="FinSight – Personal Finance Analytics Platform"
+LABEL java_version="25-LTS"
 
 WORKDIR /app
 
