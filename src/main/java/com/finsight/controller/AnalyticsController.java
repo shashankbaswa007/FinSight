@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * Provides monthly summaries, top spending categories, trends, and anomaly detection.
  */
 @RestController
-@RequestMapping("/api/analytics")
+@RequestMapping("/api/v1/analytics")
 @Tag(name = "Analytics", description = "Financial insights and spending analysis")
 public class AnalyticsController {
 

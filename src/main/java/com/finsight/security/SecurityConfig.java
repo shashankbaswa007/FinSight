@@ -60,8 +60,8 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Public endpoints - both deprecated /api and new /api/v1 paths
+                        .requestMatchers("/api/auth/**", "/api/v1/auth/**").permitAll()
                         // Swagger / OpenAPI docs
                         .requestMatchers(
                                 "/swagger-ui/**",

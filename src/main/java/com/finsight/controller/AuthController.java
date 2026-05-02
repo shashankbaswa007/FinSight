@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * REST controller for user registration and authentication.
- * All endpoints under /api/auth are publicly accessible.
+ * All endpoints under /api/v1/auth are publicly accessible.
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @Tag(name = "Authentication", description = "User registration and login")
 public class AuthController {
 

@@ -16,7 +16,7 @@ import java.util.List;
  * REST controller for managing transaction categories.
  */
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api/v1/categories")
 @Tag(name = "Categories", description = "Manage transaction categories")
 public class CategoryController {
 

@@ -32,7 +32,7 @@ class ProfileControllerIntegrationTest {
         // Register a fresh user and get a JWT token
         RegisterRequest reg = new RegisterRequest(
                 "Profile User", "profile-" + System.nanoTime() + "@test.com", "Password1!");
-        MvcResult result = mockMvc.perform(post("/api/auth/register")
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reg)))
                 .andExpect(status().isCreated())
@@ -44,7 +44,7 @@ class ProfileControllerIntegrationTest {
 
     @Test
     void getProfile_authenticated_returnsProfile() throws Exception {
-        mockMvc.perform(get("/api/profile")
+        mockMvc.perform(get("/api/v1/profile")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Profile User"))
@@ -54,7 +54,7 @@ class ProfileControllerIntegrationTest {
 
     @Test
     void getProfile_unauthenticated_returns401() throws Exception {
-        mockMvc.perform(get("/api/profile"))
+        mockMvc.perform(get("/api/v1/profile"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -63,7 +63,7 @@ class ProfileControllerIntegrationTest {
         UpdateProfileRequest update = new UpdateProfileRequest();
         update.setName("Updated Name");
 
-        mockMvc.perform(put("/api/profile")
+        mockMvc.perform(put("/api/v1/profile")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
@@ -77,7 +77,7 @@ class ProfileControllerIntegrationTest {
         cpRequest.setCurrentPassword("Password1!");
         cpRequest.setNewPassword("NewPassword2@");
 
-        mockMvc.perform(put("/api/profile/password")
+        mockMvc.perform(put("/api/v1/profile/password")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(cpRequest)))
@@ -90,7 +90,7 @@ class ProfileControllerIntegrationTest {
         cpRequest.setCurrentPassword("WrongPassword1!");
         cpRequest.setNewPassword("NewPassword2@");
 
-        mockMvc.perform(put("/api/profile/password")
+        mockMvc.perform(put("/api/v1/profile/password")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(cpRequest)))
@@ -103,7 +103,7 @@ class ProfileControllerIntegrationTest {
         cpRequest.setCurrentPassword("Password1!");
         cpRequest.setNewPassword("weak"); // Doesn't meet complexity
 
-        mockMvc.perform(put("/api/profile/password")
+        mockMvc.perform(put("/api/v1/profile/password")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(cpRequest)))

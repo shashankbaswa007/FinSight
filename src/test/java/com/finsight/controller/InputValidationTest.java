@@ -38,7 +38,7 @@ class InputValidationTest {
     void setUp() throws Exception {
         RegisterRequest reg = new RegisterRequest(
                 "Validation User", "validation-" + System.nanoTime() + "@test.com", "Password1!");
-        MvcResult result = mockMvc.perform(post("/api/auth/register")
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reg)))
                 .andExpect(status().isCreated())
@@ -53,7 +53,7 @@ class InputValidationTest {
     @Test
     void register_blankName_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("", "blank@test.com", "Password1!");
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -62,7 +62,7 @@ class InputValidationTest {
     @Test
     void register_passwordWithoutSpecialChar_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("NoSpecial", "nospec@test.com", "Password1");
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -71,7 +71,7 @@ class InputValidationTest {
     @Test
     void register_passwordWithoutUppercase_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("NoUpper", "noupper@test.com", "password1!");
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -80,7 +80,7 @@ class InputValidationTest {
     @Test
     void register_passwordWithoutDigit_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("NoDigit", "nodigit@test.com", "Password!");
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -96,7 +96,7 @@ class InputValidationTest {
         request.setCategoryId(1L);
         request.setDate(LocalDate.now());
 
-        mockMvc.perform(post("/api/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -111,7 +111,7 @@ class InputValidationTest {
         request.setCategoryId(1L);
         request.setDate(LocalDate.now());
 
-        mockMvc.perform(post("/api/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -126,7 +126,7 @@ class InputValidationTest {
         request.setCategoryId(1L);
         request.setDate(LocalDate.now());
 
-        mockMvc.perform(post("/api/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -141,7 +141,7 @@ class InputValidationTest {
         request.setCategoryId(1L);
         request.setDate(null);
 
-        mockMvc.perform(post("/api/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -156,7 +156,7 @@ class InputValidationTest {
         request.setCategoryId(null);
         request.setDate(LocalDate.now());
 
-        mockMvc.perform(post("/api/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -172,7 +172,7 @@ class InputValidationTest {
         request.setDate(LocalDate.now());
         request.setDescription("A".repeat(501)); // Max is 500
 
-        mockMvc.perform(post("/api/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -181,7 +181,7 @@ class InputValidationTest {
 
     @Test
     void createTransaction_emptyBody_returns400() throws Exception {
-        mockMvc.perform(post("/api/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -190,7 +190,7 @@ class InputValidationTest {
 
     @Test
     void createTransaction_invalidJson_returns400() throws Exception {
-        mockMvc.perform(post("/api/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{invalid json"))

@@ -27,7 +27,7 @@ class AuthControllerIntegrationTest {
     void register_success() throws Exception {
         RegisterRequest request = new RegisterRequest("John", "john@test.com", "Password1!");
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -40,13 +40,13 @@ class AuthControllerIntegrationTest {
     void register_duplicateEmail_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("Jane", "dupe@test.com", "Password1!");
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
 
         // Attempt duplicate
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -56,7 +56,7 @@ class AuthControllerIntegrationTest {
     void register_invalidEmail_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("Bad", "not-an-email", "Password1!");
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -66,7 +66,7 @@ class AuthControllerIntegrationTest {
     void register_shortPassword_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("Short", "short@test.com", "123");
 
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -76,7 +76,7 @@ class AuthControllerIntegrationTest {
     void login_success() throws Exception {
         // First register
         RegisterRequest reg = new RegisterRequest("Login User", "loginuser@test.com", "Password1!");
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reg)))
                 .andExpect(status().isCreated());
@@ -86,7 +86,7 @@ class AuthControllerIntegrationTest {
         login.setEmail("loginuser@test.com");
         login.setPassword("Password1!");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isOk())
@@ -97,7 +97,7 @@ class AuthControllerIntegrationTest {
     void login_wrongPassword_returns401() throws Exception {
         // First register
         RegisterRequest reg = new RegisterRequest("WrongPw", "wrongpw@test.com", "Password1!");
-        mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reg)))
                 .andExpect(status().isCreated());
@@ -107,7 +107,7 @@ class AuthControllerIntegrationTest {
         login.setEmail("wrongpw@test.com");
         login.setPassword("wrongpassword");
 
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isUnauthorized());
@@ -115,7 +115,7 @@ class AuthControllerIntegrationTest {
 
     @Test
     void protectedEndpoint_withoutToken_returns401() throws Exception {
-        mockMvc.perform(post("/api/transactions")
+        mockMvc.perform(post("/api/v1/transactions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isUnauthorized());
