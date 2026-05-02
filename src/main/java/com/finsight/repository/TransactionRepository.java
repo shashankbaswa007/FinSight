@@ -99,6 +99,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     /** Fetch all expense transactions for a user (used in anomaly detection). */
     List<Transaction> findByUserIdAndType(Long userId, TransactionType type);
 
+    /** Find all transactions for a user (GDPR export). */
+    List<Transaction> findByUserId(Long userId);
+
+    /** Delete all transactions for a user (GDPR hard-delete). */
+    void deleteByUserId(Long userId);
+
     /** Daily expense totals for a user within a date range. */
     @Query("SELECT t.date, SUM(t.amount) FROM Transaction t " +
            "WHERE t.user.id = :userId AND t.type = 'EXPENSE' " +

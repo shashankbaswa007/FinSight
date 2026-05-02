@@ -42,6 +42,22 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Budget> budgets = new ArrayList<>();
 
+    // ──── GDPR Support (Article 17: Right to Erasure, Article 20: Data Portability) ────
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean isDeleted = false;
+
+    @Column(name = "deletion_requested_at")
+    private LocalDateTime deletionRequestedAt;
+
+    @Column(name = "deletion_reason", length = 255)
+    private String deletionReason;
+
+    @Column(name = "hard_delete_scheduled_at")
+    private LocalDateTime hardDeleteScheduledAt;
+
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
+
     public User() {}
 
     public User(Long id, String name, String email, String password, Role role,
@@ -54,6 +70,19 @@ public class User {
         this.createdAt = createdAt;
         this.transactions = transactions;
         this.budgets = budgets;
+        this.isDeleted = false;
+    }
+
+    // ──── Lifecycle Hooks ────
+
+    @PreUpdate
+    public void onSoftDelete() {
+        // When soft-deleting, anonymize sensitive fields
+        if (this.isDeleted && this.deletionRequestedAt != null) {
+            this.email = "deleted-user-" + System.currentTimeMillis() + "@anonymized.local";
+            this.name = "[DELETED USER]";
+            this.password = "[ANONYMIZED]";
+        }
     }
 
     // ──── Getters & Setters ────
@@ -82,6 +111,25 @@ public class User {
     public List<Budget> getBudgets() { return budgets; }
     public void setBudgets(List<Budget> budgets) { this.budgets = budgets; }
 
+    public boolean isDeleted() { return isDeleted; }
+    public void setDeleted(boolean deleted) { isDeleted = deleted; }
+
+    public LocalDateTime getDeletionRequestedAt() { return deletionRequestedAt; }
+    public void setDeletionRequestedAt(LocalDateTime deletionRequestedAt) { 
+        this.deletionRequestedAt = deletionRequestedAt; 
+    }
+
+    public String getDeletionReason() { return deletionReason; }
+    public void setDeletionReason(String deletionReason) { this.deletionReason = deletionReason; }
+
+    public LocalDateTime getHardDeleteScheduledAt() { return hardDeleteScheduledAt; }
+    public void setHardDeleteScheduledAt(LocalDateTime hardDeleteScheduledAt) { 
+        this.hardDeleteScheduledAt = hardDeleteScheduledAt; 
+    }
+
+    public LocalDateTime getLastLogin() { return lastLogin; }
+    public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+
     // ──── Builder ────
 
     public static UserBuilder builder() { return new UserBuilder(); }
@@ -95,6 +143,11 @@ public class User {
         private LocalDateTime createdAt;
         private List<Transaction> transactions = new ArrayList<>();
         private List<Budget> budgets = new ArrayList<>();
+        private boolean isDeleted = false;
+        private LocalDateTime deletionRequestedAt;
+        private String deletionReason;
+        private LocalDateTime hardDeleteScheduledAt;
+        private LocalDateTime lastLogin;
 
         public UserBuilder id(Long id) { this.id = id; return this; }
         public UserBuilder name(String name) { this.name = name; return this; }
@@ -104,9 +157,28 @@ public class User {
         public UserBuilder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
         public UserBuilder transactions(List<Transaction> transactions) { this.transactions = transactions; return this; }
         public UserBuilder budgets(List<Budget> budgets) { this.budgets = budgets; return this; }
+        public UserBuilder isDeleted(boolean isDeleted) { this.isDeleted = isDeleted; return this; }
+        public UserBuilder deletionRequestedAt(LocalDateTime deletionRequestedAt) { 
+            this.deletionRequestedAt = deletionRequestedAt; return this; 
+        }
+        public UserBuilder deletionReason(String deletionReason) { 
+            this.deletionReason = deletionReason; return this; 
+        }
+        public UserBuilder hardDeleteScheduledAt(LocalDateTime hardDeleteScheduledAt) { 
+            this.hardDeleteScheduledAt = hardDeleteScheduledAt; return this; 
+        }
+        public UserBuilder lastLogin(LocalDateTime lastLogin) { 
+            this.lastLogin = lastLogin; return this; 
+        }
 
         public User build() {
-            return new User(id, name, email, password, role, createdAt, transactions, budgets);
+            User user = new User(id, name, email, password, role, createdAt, transactions, budgets);
+            user.isDeleted = this.isDeleted;
+            user.deletionRequestedAt = this.deletionRequestedAt;
+            user.deletionReason = this.deletionReason;
+            user.hardDeleteScheduledAt = this.hardDeleteScheduledAt;
+            user.lastLogin = this.lastLogin;
+            return user;
         }
     }
 }

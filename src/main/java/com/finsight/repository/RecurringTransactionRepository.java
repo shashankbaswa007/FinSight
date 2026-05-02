@@ -14,4 +14,7 @@ public interface RecurringTransactionRepository extends JpaRepository<RecurringT
     List<RecurringTransaction> findByUserId(Long userId);
 
     List<RecurringTransaction> findByActiveAndNextOccurrenceLessThanEqual(boolean active, LocalDate date);
+
+    /** Delete all recurring transactions for a user (GDPR hard-delete). */
+    void deleteByUserId(Long userId);
 }
