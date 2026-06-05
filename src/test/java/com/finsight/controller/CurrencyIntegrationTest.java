@@ -79,6 +79,14 @@ class CurrencyIntegrationTest {
         when(securityUtil.getCurrentUserId()).thenReturn(testUser.getId());
     }
 
+    @org.junit.jupiter.api.AfterEach
+    public void teardown() {
+        webhookRepository.deleteAll();
+        userWalletRepository.deleteAll();
+        userRepository.deleteAll();
+        currencyRepository.deleteAll();
+    }
+
     @Test
         @SuppressWarnings("unused")
     void getActiveCurrencies_success() throws Exception {

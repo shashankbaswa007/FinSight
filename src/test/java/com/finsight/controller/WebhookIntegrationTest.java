@@ -63,6 +63,12 @@ class WebhookIntegrationTest {
         when(securityUtil.getCurrentUserId()).thenReturn(testUser.getId());
     }
 
+    @org.junit.jupiter.api.AfterEach
+    public void teardown() {
+        webhookRepository.deleteAll();
+        userRepository.deleteAll();
+    }
+
     @Test
         @SuppressWarnings("unused")
     void createWebhook_success() throws Exception {
