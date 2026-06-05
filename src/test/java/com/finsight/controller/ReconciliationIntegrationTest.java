@@ -88,6 +88,16 @@ public class ReconciliationIntegrationTest {
         when(securityUtil.getCurrentUserId()).thenReturn(testUser.getId());
     }
 
+    @org.junit.jupiter.api.AfterEach
+    public void teardown() {
+        transactionMatchRepository.deleteAll();
+        externalTransactionRepository.deleteAll();
+        reconciliationBatchRepository.deleteAll();
+        transactionRepository.deleteAll();
+        categoryRepository.deleteAll();
+        userRepository.deleteAll();
+    }
+
     @Test
         @SuppressWarnings("unused")
     public void reconciliationEndToEnd_andExportCsv() {

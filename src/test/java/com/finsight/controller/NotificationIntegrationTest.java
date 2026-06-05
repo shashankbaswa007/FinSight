@@ -65,6 +65,12 @@ class NotificationIntegrationTest {
         when(securityUtil.getCurrentUserId()).thenReturn(testUser.getId());
     }
 
+    @org.junit.jupiter.api.AfterEach
+    public void teardown() {
+        notificationRepository.deleteAll();
+        userRepository.deleteAll();
+    }
+
     @Test
         @SuppressWarnings("unused")
     void getUnreadNotifications_whenEmpty() throws Exception {
