@@ -36,6 +36,7 @@ class CategoryServiceTest {
     private Category sampleCategory;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         sampleCategory = Category.builder()
                 .id(1L)
@@ -45,6 +46,7 @@ class CategoryServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unused", "null"})
     void createCategory_success() {
         CategoryRequest request = new CategoryRequest();
         request.setName("Food");
@@ -62,6 +64,7 @@ class CategoryServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unused", "null"})
     void createCategory_duplicateThrows() {
         CategoryRequest request = new CategoryRequest();
         request.setName("Food");
@@ -75,6 +78,7 @@ class CategoryServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unused")
     void getAllCategories_returnsList() {
         when(categoryRepository.findAll()).thenReturn(List.of(sampleCategory));
 
@@ -85,6 +89,7 @@ class CategoryServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unused")
     void findById_found() {
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(sampleCategory));
 
@@ -94,6 +99,7 @@ class CategoryServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unused")
     void findById_notFoundThrows() {
         when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 

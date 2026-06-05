@@ -10,15 +10,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -27,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@SuppressWarnings("unused")
 class InputValidationTest {
 
     @Autowired private MockMvc mockMvc;
@@ -35,12 +37,13 @@ class InputValidationTest {
     private String token;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() throws Exception {
         RegisterRequest reg = new RegisterRequest(
                 "Validation User", "validation-" + System.nanoTime() + "@test.com", "Password1!");
         MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(reg)))
+                        .contentType(json())
+                        .content(toJson(reg)))
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -51,44 +54,49 @@ class InputValidationTest {
     // ──── Registration Validation ────
 
     @Test
+    @SuppressWarnings("unused")
     void register_blankName_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("", "blank@test.com", "Password1!");
         mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void register_passwordWithoutSpecialChar_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("NoSpecial", "nospec@test.com", "Password1");
         mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void register_passwordWithoutUppercase_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("NoUpper", "noupper@test.com", "password1!");
         mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void register_passwordWithoutDigit_returns400() throws Exception {
         RegisterRequest request = new RegisterRequest("NoDigit", "nodigit@test.com", "Password!");
         mockMvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     // ──── Transaction Validation ────
 
     @Test
+    @SuppressWarnings("unused")
     void createTransaction_negativeAmount_returns400() throws Exception {
         TransactionRequest request = new TransactionRequest();
         request.setAmount(BigDecimal.valueOf(-100));
@@ -98,12 +106,13 @@ class InputValidationTest {
 
         mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void createTransaction_zeroAmount_returns400() throws Exception {
         TransactionRequest request = new TransactionRequest();
         request.setAmount(BigDecimal.ZERO);
@@ -113,12 +122,13 @@ class InputValidationTest {
 
         mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void createTransaction_nullType_returns400() throws Exception {
         TransactionRequest request = new TransactionRequest();
         request.setAmount(BigDecimal.valueOf(100));
@@ -128,12 +138,13 @@ class InputValidationTest {
 
         mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void createTransaction_nullDate_returns400() throws Exception {
         TransactionRequest request = new TransactionRequest();
         request.setAmount(BigDecimal.valueOf(100));
@@ -143,12 +154,13 @@ class InputValidationTest {
 
         mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void createTransaction_nullCategoryId_returns400() throws Exception {
         TransactionRequest request = new TransactionRequest();
         request.setAmount(BigDecimal.valueOf(100));
@@ -158,12 +170,13 @@ class InputValidationTest {
 
         mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void createTransaction_descriptionTooLong_returns400() throws Exception {
         TransactionRequest request = new TransactionRequest();
         request.setAmount(BigDecimal.valueOf(100));
@@ -174,26 +187,38 @@ class InputValidationTest {
 
         mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(json())
+                        .content(toJson(request)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void createTransaction_emptyBody_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(json())
                         .content("{}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void createTransaction_invalidJson_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/transactions")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(json())
                         .content("{invalid json"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @NonNull
+    private MediaType json() {
+        return Objects.requireNonNull(MediaType.APPLICATION_JSON, "applicationJson");
+    }
+
+    @NonNull
+    private String toJson(Object value) throws Exception {
+        return Objects.requireNonNull(objectMapper.writeValueAsString(value), "json");
     }
 }

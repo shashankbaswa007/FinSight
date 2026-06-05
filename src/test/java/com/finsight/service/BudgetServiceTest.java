@@ -45,6 +45,7 @@ class BudgetServiceTest {
     private Budget budget;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         user = User.builder().id(1L).name("Test").email("test@test.com").password("pass").build();
         category = Category.builder().id(1L).name("Food").type(TransactionType.EXPENSE).build();
@@ -54,6 +55,7 @@ class BudgetServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unused", "null"})
     void createBudget_success() {
         BudgetRequest request = new BudgetRequest();
         request.setCategoryId(1L);
@@ -75,6 +77,7 @@ class BudgetServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unused", "null"})
     void createBudget_duplicateThrows() {
         BudgetRequest request = new BudgetRequest();
         request.setCategoryId(1L);
@@ -90,6 +93,7 @@ class BudgetServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unused")
     void getBudgets_returnsList() {
         when(budgetRepository.findByUserId(1L)).thenReturn(List.of(budget));
 
@@ -99,6 +103,7 @@ class BudgetServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unused", "null"})
     void getBudgetStatus_calculatesCorrectly() {
         when(budgetRepository.findByUserIdAndMonthAndYear(1L, 3, 2026)).thenReturn(List.of(budget));
         when(transactionRepository.sumExpenseByUserAndCategoryAndDateRange(any(), any(), any(), any()))
@@ -113,6 +118,7 @@ class BudgetServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unused", "null"})
     void getBudgetStatus_exceeded() {
         when(budgetRepository.findByUserIdAndMonthAndYear(1L, 3, 2026)).thenReturn(List.of(budget));
         when(transactionRepository.sumExpenseByUserAndCategoryAndDateRange(any(), any(), any(), any()))

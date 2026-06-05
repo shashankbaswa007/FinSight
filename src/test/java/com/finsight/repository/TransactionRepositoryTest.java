@@ -3,6 +3,7 @@ package com.finsight.repository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,23 +30,25 @@ class TransactionRepositoryTest {
     private Category foodCategory;
     private Category salaryCategory;
 
-    @BeforeEach
+        @BeforeEach
+        @SuppressWarnings("unused")
     void setUp() {
         user = new User();
         user.setName("Test User");
         user.setEmail("repo-test@test.com");
         user.setPassword("hashed");
         user.setRole(Role.USER);
-        user = userRepository.save(user);
+        user = userRepository.save(Objects.requireNonNull(user, "user"));
 
         foodCategory = Category.builder().name("Food").type(TransactionType.EXPENSE).build();
-        foodCategory = categoryRepository.save(foodCategory);
+        foodCategory = categoryRepository.save(Objects.requireNonNull(foodCategory, "foodCategory"));
 
         salaryCategory = Category.builder().name("Salary").type(TransactionType.INCOME).build();
-        salaryCategory = categoryRepository.save(salaryCategory);
+        salaryCategory = categoryRepository.save(Objects.requireNonNull(salaryCategory, "salaryCategory"));
     }
 
     @Test
+        @SuppressWarnings("unused")
     void sumAmountByUserAndTypeAndDateRange() {
         Transaction t1 = Transaction.builder()
                 .user(user).amount(BigDecimal.valueOf(500)).type(TransactionType.EXPENSE)
@@ -53,7 +56,10 @@ class TransactionRepositoryTest {
         Transaction t2 = Transaction.builder()
                 .user(user).amount(BigDecimal.valueOf(300)).type(TransactionType.EXPENSE)
                 .category(foodCategory).date(LocalDate.of(2026, 3, 15)).build();
-        transactionRepository.saveAll(List.of(t1, t2));
+        transactionRepository.saveAll(Objects.requireNonNull(List.of(
+                Objects.requireNonNull(t1, "t1"),
+                Objects.requireNonNull(t2, "t2")
+        ), "transactions"));
 
         BigDecimal sum = transactionRepository.sumAmountByUserAndTypeAndDateRange(
                 user.getId(), TransactionType.EXPENSE,
@@ -63,6 +69,7 @@ class TransactionRepositoryTest {
     }
 
     @Test
+        @SuppressWarnings("unused")
     void sumAmountByUserAndTypeAndDateRange_noResults_returnsZero() {
         BigDecimal sum = transactionRepository.sumAmountByUserAndTypeAndDateRange(
                 user.getId(), TransactionType.INCOME,
@@ -72,21 +79,23 @@ class TransactionRepositoryTest {
     }
 
     @Test
+        @SuppressWarnings("unused")
     void findByIdAndUserId() {
         Transaction t = Transaction.builder()
                 .user(user).amount(BigDecimal.valueOf(100)).type(TransactionType.EXPENSE)
                 .category(foodCategory).date(LocalDate.now()).build();
-        t = transactionRepository.save(t);
+        t = transactionRepository.save(Objects.requireNonNull(t, "transaction"));
 
         assertThat(transactionRepository.findByIdAndUserId(t.getId(), user.getId())).isPresent();
         assertThat(transactionRepository.findByIdAndUserId(t.getId(), 999L)).isEmpty();
     }
 
     @Test
+        @SuppressWarnings("unused")
     void findTopSpendingCategories() {
-        transactionRepository.save(Transaction.builder()
+        transactionRepository.save(Objects.requireNonNull(Transaction.builder()
                 .user(user).amount(BigDecimal.valueOf(1000)).type(TransactionType.EXPENSE)
-                .category(foodCategory).date(LocalDate.of(2026, 3, 10)).build());
+                .category(foodCategory).date(LocalDate.of(2026, 3, 10)).build(), "transaction"));
 
         List<Object[]> results = transactionRepository.findTopSpendingCategories(
                 user.getId(), LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31));
