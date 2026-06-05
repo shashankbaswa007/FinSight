@@ -40,3 +40,6 @@ build/
 # Frontend build output
 frontend/dist/
 frontend/node_modules/
+
+# Test run artifacts
+test_output.txt
