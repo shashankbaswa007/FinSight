@@ -45,30 +45,48 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final BudgetRepository budgetRepository;
     private final RecurringTransactionRepository recurringTransactionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final jakarta.persistence.EntityManager em;
 
     public DemoDataSeeder(UserRepository userRepository,
                           CategoryRepository categoryRepository,
                           TransactionRepository transactionRepository,
                           BudgetRepository budgetRepository,
                           RecurringTransactionRepository recurringTransactionRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          jakarta.persistence.EntityManager em) {
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.transactionRepository = transactionRepository;
         this.budgetRepository = budgetRepository;
         this.recurringTransactionRepository = recurringTransactionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.em = em;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
-        if (userRepository.findByEmail("demo@finsight.com").isPresent()) {
-            log.info("Demo user already exists — skipping seed.");
-            return;
-        }
+        userRepository.findByEmail("demo@finsight.com").ifPresent(demo -> {
+            log.info("Demo user exists. Deleting existing data to re-seed with fresh 12-month data...");
+            org.hibernate.Session session = em.unwrap(org.hibernate.Session.class);
+            session.doWork(connection -> {
+                try (java.sql.Statement stmt = connection.createStatement()) {
+                    stmt.execute("DELETE FROM reconciliation_transactions WHERE batch_id IN (SELECT id FROM reconciliation_batches WHERE user_id = " + demo.getId() + ")");
+                } catch (Exception e) { log.debug("Skipped reconciliation_transactions deletion"); }
+                try (java.sql.Statement stmt = connection.createStatement()) {
+                    stmt.execute("DELETE FROM reconciliation_batches WHERE user_id = " + demo.getId());
+                } catch (Exception e) { log.debug("Skipped reconciliation_batches deletion"); }
+            });
+            em.createQuery("DELETE FROM Notification WHERE user.id = :uid").setParameter("uid", demo.getId()).executeUpdate();
+            em.createQuery("DELETE FROM NotificationPreference WHERE user.id = :uid").setParameter("uid", demo.getId()).executeUpdate();
+            em.createQuery("DELETE FROM RecurringTransaction WHERE user.id = :uid").setParameter("uid", demo.getId()).executeUpdate();
+            em.createQuery("DELETE FROM Transaction WHERE user.id = :uid").setParameter("uid", demo.getId()).executeUpdate();
+            em.createQuery("DELETE FROM Budget WHERE user.id = :uid").setParameter("uid", demo.getId()).executeUpdate();
+            userRepository.delete(demo);
+            em.flush();
+        });
 
-        log.info("Seeding demo data...");
+        log.info("Seeding upgraded 12-month demo data...");
 
         // ── 1. Create demo user ──
         User demo = new User();
@@ -93,109 +111,111 @@ public class DemoDataSeeder implements CommandLineRunner {
         Category rent          = findCat(allCats, "Rent", TransactionType.EXPENSE);
         Category education     = findCat(allCats, "Education", TransactionType.EXPENSE);
 
-        // ── 3. Generate 6 months of transactions ──
-        Random rng = new Random(42); // deterministic for reproducibility
+        // ── 3. Generate 12 months of transactions with trend ──
+        Random rng = new Random(42); 
         LocalDate today = LocalDate.now();
         int txCount = 0;
+        
+        // Base amounts that will grow with "inflation" or "raise"
+        double baseSalary = 65000;
+        double baseRent = 23000;
 
-        for (int m = 5; m >= 0; m--) {
+        for (int m = 11; m >= 0; m--) {
             LocalDate monthStart = today.minusMonths(m).withDayOfMonth(1);
             int daysInMonth = monthStart.lengthOfMonth();
+            
+            // Inflation factor: expenses grow slightly over the 12 months (up to 10%)
+            double inflationFactor = 1.0 + ((11 - m) * 0.01);
+            
+            // Salary bump after 6 months
+            double currentSalary = (m <= 5) ? 75000 : baseSalary;
+            double currentRent = (m <= 5) ? 25000 : baseRent;
 
             // === INCOME ===
-            // Salary on 1st
             txCount += addTx(demo, salary, "Monthly Salary", "INCOME",
-                    bd(75000 + rng.nextInt(5000)), monthStart.withDayOfMonth(1));
+                    bd(currentSalary), monthStart.withDayOfMonth(1));
 
-            // Freelance on ~15th (4 out of 6 months)
             if (m % 3 != 2) {
                 txCount += addTx(demo, freelance, "Web Development Project", "INCOME",
-                        bd(12000 + rng.nextInt(8000)), monthStart.withDayOfMonth(15));
+                        bd((10000 + rng.nextInt(5000)) * inflationFactor), monthStart.withDayOfMonth(15));
             }
 
-            // Investment returns on ~25th (every other month)
             if (m % 2 == 0) {
                 txCount += addTx(demo, investments, "Mutual Fund Returns", "INCOME",
                         bd(3000 + rng.nextInt(4000)), monthStart.withDayOfMonth(25));
             }
 
             // === EXPENSES ===
-
-            // Rent on 5th
             txCount += addTx(demo, rent, "Monthly Rent", "EXPENSE",
-                    bd(25000), monthStart.withDayOfMonth(5));
+                    bd(currentRent), monthStart.withDayOfMonth(5));
 
-            // Utilities on 8th
             txCount += addTx(demo, utilities, "Electricity Bill", "EXPENSE",
-                    bd(1500 + rng.nextInt(1000)), monthStart.withDayOfMonth(8));
+                    bd((1500 + rng.nextInt(500)) * inflationFactor), monthStart.withDayOfMonth(8));
             txCount += addTx(demo, utilities, "Internet & Phone", "EXPENSE",
-                    bd(1200 + rng.nextInt(300)), monthStart.withDayOfMonth(9));
+                    bd(1299), monthStart.withDayOfMonth(9));
 
-            // Food — multiple entries spread across the month
-            String[] foodDescs = {"Swiggy Order", "Grocery Store", "Zomato Delivery",
-                    "Restaurant Dinner", "Coffee Shop", "BigBasket Order", "Supermarket"};
+            // Food
+            String[] foodDescs = {"Swiggy Order", "Grocery Store", "Zomato Delivery", "Restaurant Dinner", "Coffee Shop", "Supermarket"};
             for (int d = 2; d <= daysInMonth; d += 2 + rng.nextInt(2)) {
-                txCount += addTx(demo, food,
-                        foodDescs[rng.nextInt(foodDescs.length)], "EXPENSE",
-                        bd(200 + rng.nextInt(1800)),
+                txCount += addTx(demo, food, foodDescs[rng.nextInt(foodDescs.length)], "EXPENSE",
+                        bd((200 + rng.nextInt(1800)) * inflationFactor),
                         monthStart.withDayOfMonth(Math.min(d, daysInMonth)));
             }
 
-            // Transport — several entries
-            String[] transportDescs = {"Uber Ride", "Ola Auto", "Metro Card Recharge",
-                    "Petrol Fill-up", "Rapido Bike"};
+            // Transport
+            String[] transportDescs = {"Uber Ride", "Ola Auto", "Metro Card Recharge", "Petrol Fill-up"};
             for (int d = 3; d <= daysInMonth; d += 4 + rng.nextInt(3)) {
-                txCount += addTx(demo, transport,
-                        transportDescs[rng.nextInt(transportDescs.length)], "EXPENSE",
-                        bd(100 + rng.nextInt(900)),
+                txCount += addTx(demo, transport, transportDescs[rng.nextInt(transportDescs.length)], "EXPENSE",
+                        bd((100 + rng.nextInt(900)) * inflationFactor),
                         monthStart.withDayOfMonth(Math.min(d, daysInMonth)));
             }
 
-            // Shopping (2–3 per month)
-            String[] shopDescs = {"Amazon Purchase", "Flipkart Order", "Myntra Fashion",
-                    "Electronics Store", "IKEA Home"};
-            int shopCount = 2 + rng.nextInt(2);
+            // Shopping
+            String[] shopDescs = {"Amazon Purchase", "Flipkart Order", "Myntra Fashion", "Electronics Store"};
+            int shopCount = 2 + rng.nextInt(3);
             for (int i = 0; i < shopCount; i++) {
                 int day = 5 + rng.nextInt(daysInMonth - 5);
-                txCount += addTx(demo, shopping,
-                        shopDescs[rng.nextInt(shopDescs.length)], "EXPENSE",
-                        bd(500 + rng.nextInt(4500)),
+                txCount += addTx(demo, shopping, shopDescs[rng.nextInt(shopDescs.length)], "EXPENSE",
+                        bd((500 + rng.nextInt(4000)) * inflationFactor),
                         monthStart.withDayOfMonth(day));
             }
+            
+            // Intentionally overspend on shopping in the CURRENT month to trigger alerts
+            if (m == 0) {
+                 txCount += addTx(demo, shopping, "Luxury Watch Purchase", "EXPENSE",
+                        bd(18500), monthStart.withDayOfMonth(10));
+            }
 
-            // Entertainment (1–2 per month)
-            String[] entDescs = {"Netflix Subscription", "Movie Tickets", "Concert Tickets",
-                    "Spotify Premium", "Gaming Purchase"};
-            int entCount = 1 + rng.nextInt(2);
+            // Entertainment
+            String[] entDescs = {"Netflix Subscription", "Movie Tickets", "Spotify Premium", "Gaming Purchase"};
+            int entCount = 1 + rng.nextInt(3);
             for (int i = 0; i < entCount; i++) {
                 int day = 10 + rng.nextInt(Math.max(1, daysInMonth - 15));
-                txCount += addTx(demo, entertainment,
-                        entDescs[rng.nextInt(entDescs.length)], "EXPENSE",
-                        bd(200 + rng.nextInt(2300)),
+                txCount += addTx(demo, entertainment, entDescs[rng.nextInt(entDescs.length)], "EXPENSE",
+                        bd(200 + rng.nextInt(2000)),
                         monthStart.withDayOfMonth(day));
             }
 
-            // Healthcare (0–1 per month)
+            // Healthcare
             if (rng.nextInt(3) == 0) {
-                String[] healthDescs = {"Pharmacy", "Doctor Consultation", "Lab Test"};
-                int day = 10 + rng.nextInt(15);
-                txCount += addTx(demo, healthcare,
-                        healthDescs[rng.nextInt(healthDescs.length)], "EXPENSE",
-                        bd(500 + rng.nextInt(3000)),
-                        monthStart.withDayOfMonth(Math.min(day, daysInMonth)));
+                txCount += addTx(demo, healthcare, "Pharmacy", "EXPENSE",
+                        bd(500 + rng.nextInt(1500)), monthStart.withDayOfMonth(10 + rng.nextInt(15)));
             }
 
-            // Education (every other month)
-            if (m % 2 == 1) {
-                txCount += addTx(demo, education, "Online Course - Udemy", "EXPENSE",
-                        bd(500 + rng.nextInt(2000)),
-                        monthStart.withDayOfMonth(12));
+            // Education
+            if (m % 3 == 0) {
+                txCount += addTx(demo, education, "Online Course", "EXPENSE",
+                        bd(1500 + rng.nextInt(3000)), monthStart.withDayOfMonth(12));
             }
 
-            // One outlier large expense in month 2 for anomaly detection demo
+            // Anomalies
             if (m == 2) {
                 txCount += addTx(demo, shopping, "New Laptop Purchase", "EXPENSE",
-                        bd(65000), monthStart.withDayOfMonth(18));
+                        bd(85000), monthStart.withDayOfMonth(18));
+            }
+            if (m == 5) {
+                txCount += addTx(demo, healthcare, "Unexpected Hospital Bill", "EXPENSE",
+                        bd(45000), monthStart.withDayOfMonth(22));
             }
         }
 
@@ -205,28 +225,40 @@ public class DemoDataSeeder implements CommandLineRunner {
         int curMonth = today.getMonthValue();
         int curYear = today.getYear();
 
-        saveBudget(demo, food, 15000, curMonth, curYear);
-        saveBudget(demo, transport, 5000, curMonth, curYear);
-        saveBudget(demo, shopping, 8000, curMonth, curYear);
-        saveBudget(demo, entertainment, 3000, curMonth, curYear);
-        saveBudget(demo, utilities, 4000, curMonth, curYear);
+        saveBudget(demo, food, 18000, curMonth, curYear);
+        saveBudget(demo, transport, 6000, curMonth, curYear);
+        saveBudget(demo, shopping, 10000, curMonth, curYear); // We spent 18500+ earlier on shopping in curMonth!
+        saveBudget(demo, entertainment, 4000, curMonth, curYear);
+        saveBudget(demo, utilities, 5000, curMonth, curYear);
         saveBudget(demo, rent, 25000, curMonth, curYear);
         log.info("Seeded 6 budgets");
 
         // ── 5. Recurring transactions ──
         saveRecurring(demo, salary, "Monthly Salary", TransactionType.INCOME,
                 bd(75000), RecurringFrequency.MONTHLY,
-                today.minusMonths(6).withDayOfMonth(1), null);
+                today.minusMonths(12).withDayOfMonth(1), null);
         saveRecurring(demo, rent, "Monthly Rent", TransactionType.EXPENSE,
                 bd(25000), RecurringFrequency.MONTHLY,
-                today.minusMonths(6).withDayOfMonth(5), null);
+                today.minusMonths(12).withDayOfMonth(5), null);
         saveRecurring(demo, entertainment, "Netflix Subscription", TransactionType.EXPENSE,
                 bd(649), RecurringFrequency.MONTHLY,
-                today.minusMonths(3).withDayOfMonth(15), null);
+                today.minusMonths(12).withDayOfMonth(15), null);
         saveRecurring(demo, utilities, "Internet & Phone", TransactionType.EXPENSE,
                 bd(1299), RecurringFrequency.MONTHLY,
-                today.minusMonths(6).withDayOfMonth(9), null);
-        log.info("Seeded 4 recurring transactions");
+                today.minusMonths(12).withDayOfMonth(9), null);
+                
+        // ── 6. Create Notifications ──
+        em.createNativeQuery("INSERT INTO notification_preferences (user_id, budget_alerts_enabled, budget_alert_threshold, alert_email, alert_in_app, alert_frequency, created_at, updated_at) VALUES (?, true, 80, true, true, 'REAL_TIME', NOW(), NOW())")
+          .setParameter(1, demo.getId())
+          .executeUpdate();
+          
+        em.createNativeQuery("INSERT INTO notifications (user_id, type, title, message, is_read, created_at) VALUES (?, 'BUDGET_ALERT', 'Budget Exceeded: Shopping', 'You have exceeded your budget for Shopping by 85%', false, NOW())")
+          .setParameter(1, demo.getId())
+          .executeUpdate();
+          
+        em.createNativeQuery("INSERT INTO notifications (user_id, type, title, message, is_read, created_at) VALUES (?, 'SYSTEM', 'Welcome to FinSight!', 'We have analyzed your past 12 months of spending. Visit the Analytics page to see your trends.', false, NOW())")
+          .setParameter(1, demo.getId())
+          .executeUpdate();
 
         log.info("Demo data seeding complete! Login with demo@finsight.com / Demo@1234");
     }
