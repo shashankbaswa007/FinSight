@@ -4,16 +4,16 @@ import com.finsight.dto.GdprExportResponse;
 import com.finsight.exception.ResourceNotFoundException;
 import com.finsight.model.*;
 import com.finsight.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +45,6 @@ public class GdprService {
     @Value("${app.version:1.0.0}")
     private String appVersion;
 
-    @Autowired
     public GdprService(UserRepository userRepository, TransactionRepository transactionRepository,
                        BudgetRepository budgetRepository, RecurringTransactionRepository recurringTransactionRepository) {
         this.userRepository = userRepository;
@@ -66,7 +65,7 @@ public class GdprService {
      * @throws ResourceNotFoundException if user not found
      */
     @Transactional(readOnly = true)
-    public GdprExportResponse exportUserData(Long userId, String requestingUserEmail) {
+        public GdprExportResponse exportUserData(@NonNull Long userId, String requestingUserEmail) {
         log.info("GDPR Data Export Request: userId={}, requestedBy={}", userId, requestingUserEmail);
 
         User user = userRepository.findById(userId)
@@ -196,7 +195,7 @@ public class GdprService {
      * @throws ResourceNotFoundException if user not found
      */
     @Transactional
-    public String requestDataDeletion(Long userId, String reason, String requestingUserEmail) {
+        public String requestDataDeletion(@NonNull Long userId, String reason, String requestingUserEmail) {
         log.info("GDPR Data Deletion Request: userId={}, reason={}, requestedBy={}", 
                 userId, reason, requestingUserEmail);
 
@@ -214,6 +213,10 @@ public class GdprService {
         user.setDeletionRequestedAt(LocalDateTime.now());
         user.setDeletionReason(reason);
         user.setHardDeleteScheduledAt(LocalDateTime.now().plusDays(RETENTION_DAYS));
+
+        // Explicitly anonymize PII (name, email, password) for GDPR compliance
+        String anonymizedEmail = "deleted-user-" + userId + "-" + System.currentTimeMillis() + "@anonymized.local";
+        user.anonymize(anonymizedEmail);
 
         userRepository.save(user);
 
@@ -238,7 +241,7 @@ public class GdprService {
      * @throws ResourceNotFoundException if user not found
      */
     @Transactional
-    public String cancelDeletionRequest(Long userId, String requestingUserEmail) {
+        public String cancelDeletionRequest(@NonNull Long userId, String requestingUserEmail) {
         log.info("GDPR Deletion Cancel Request: userId={}, requestedBy={}", userId, requestingUserEmail);
 
         User user = userRepository.findById(userId)
@@ -280,7 +283,8 @@ public class GdprService {
     public void performScheduledHardDelete() {
         log.info("Starting scheduled hard-delete job for expired retention periods");
 
-        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(RETENTION_DAYS);
+        // Use now() as cutoff — hardDeleteScheduledAt was already set to deletionTime + RETENTION_DAYS
+        LocalDateTime cutoffDate = LocalDateTime.now();
         List<User> usersForDeletion = userRepository.findDeletedUsersBefore(cutoffDate);
 
         if (usersForDeletion.isEmpty()) {
@@ -309,8 +313,8 @@ public class GdprService {
      * @param user The user to hard-delete
      */
     @Transactional
-    private void performHardDelete(User user) {
-        Long userId = user.getId();
+    public void performHardDelete(User user) {
+        Long userId = Objects.requireNonNull(user.getId(), "userId");
         log.info("Performing hard-delete for userId={}", userId);
 
         try {
@@ -338,7 +342,7 @@ public class GdprService {
      * @return Status object with deletion info
      */
     @Transactional(readOnly = true)
-    public GdprComplianceStatus checkGdprStatus(Long userId) {
+        public GdprComplianceStatus checkGdprStatus(@NonNull Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 

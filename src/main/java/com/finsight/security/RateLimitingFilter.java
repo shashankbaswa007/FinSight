@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.springframework.lang.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -23,21 +24,28 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     private final int maxRequests;
     private static final long WINDOW_MS = 60_000; // 1 minute
+    private static final int CLEANUP_THRESHOLD = 100; // clean up every N requests
 
     private final Map<String, RateEntry> cache = new ConcurrentHashMap<>();
+    private final AtomicInteger requestCounter = new AtomicInteger(0);
 
     public RateLimitingFilter(@org.springframework.beans.factory.annotation.Value("${app.rate-limit.max-requests:20}") int maxRequests) {
         this.maxRequests = maxRequests;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
-        if (!path.startsWith("/api/auth/")) {
+        if (!path.startsWith("/api/auth/") && !path.startsWith("/api/v1/auth/")) {
             filterChain.doFilter(request, response);
             return;
+        }
+
+        // Periodically clean up expired entries to prevent memory leak
+        if (requestCounter.incrementAndGet() % CLEANUP_THRESHOLD == 0) {
+            evictExpiredEntries();
         }
 
         String clientIp = getClientIp(request);
@@ -58,6 +66,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /** Remove expired entries from the cache to prevent unbounded memory growth. */
+    private void evictExpiredEntries() {
+        long now = System.currentTimeMillis();
+        cache.entrySet().removeIf(entry -> now - entry.getValue().windowStart > WINDOW_MS);
     }
 
     private String getClientIp(HttpServletRequest request) {

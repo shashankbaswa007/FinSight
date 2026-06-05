@@ -2,10 +2,11 @@ package com.finsight.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
+
+import java.util.Objects;
 
 /**
  * Deprecation Redirect Controller - Handles backward compatibility for /api paths.
@@ -49,9 +50,10 @@ public class DeprecationRedirectController {
         String originalPath = request.getRequestURI();
         String redirectPath = originalPath.replace("/api/", "/api/v1/");
 
-        // Return permanent redirect (301) - client should cache and update
-        RedirectView view = new RedirectView(redirectPath);
-        view.setStatusCode(HttpStatus.MOVED_PERMANENTLY);
+        // Return permanent redirect (308) - preserves the original HTTP method (POST stays POST)
+        // Using 301 would cause clients to change POST to GET, breaking login/register
+        RedirectView view = new RedirectView(Objects.requireNonNull(redirectPath, "redirectPath"));
+        view.setStatusCode(HttpStatus.PERMANENT_REDIRECT);
         return view;
     }
 }

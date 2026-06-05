@@ -11,9 +11,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.crypto.Cipher;
-import java.util.Base64;
-import java.util.List;
 
 /**
  * Service to handle encryption migration from unencrypted to encrypted columns.
@@ -34,8 +31,6 @@ public class EncryptionMigrationService {
     
     private final TransactionRepository transactionRepository;
     private final RecurringTransactionRepository recurringTransactionRepository;
-    private static final String CIPHER_ALGORITHM = "AES";
-    private static final String CIPHER_TRANSFORMATION = "AES/ECB/PKCS5Padding";
     private static final int BATCH_SIZE = 500;
 
     public EncryptionMigrationService(

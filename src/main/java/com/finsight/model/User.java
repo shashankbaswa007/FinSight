@@ -73,16 +73,24 @@ public class User {
         this.isDeleted = false;
     }
 
-    // ──── Lifecycle Hooks ────
+    // ──── GDPR Anonymization ────
 
-    @PreUpdate
-    public void onSoftDelete() {
-        // When soft-deleting, anonymize sensitive fields
-        if (this.isDeleted && this.deletionRequestedAt != null) {
-            this.email = "deleted-user-" + System.currentTimeMillis() + "@anonymized.local";
-            this.name = "[DELETED USER]";
-            this.password = "[ANONYMIZED]";
-        }
+    /**
+     * Anonymizes sensitive user fields for GDPR compliance.
+     * 
+     * IMPORTANT: This must be called EXPLICITLY by GdprService during soft-delete,
+     * NOT via @PreUpdate. Using @PreUpdate caused data destruction whenever the
+     * user record was saved for any reason (e.g., cancel-deletion would trigger
+     * anonymization before the isDeleted flag was cleared).
+     * 
+     * @param anonymizedEmail A unique anonymized email to replace the real one
+     */
+    public void anonymize(String anonymizedEmail) {
+        this.email = anonymizedEmail;
+        this.name = "[DELETED USER]";
+        // Password is set to a long random value that can never match any BCrypt hash,
+        // rather than a recognizable string that could confuse debugging
+        this.password = "ANONYMIZED-" + java.util.UUID.randomUUID();
     }
 
     // ──── Getters & Setters ────

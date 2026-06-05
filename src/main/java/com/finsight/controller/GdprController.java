@@ -2,9 +2,7 @@ package com.finsight.controller;
 
 import com.finsight.dto.GdprExportResponse;
 import com.finsight.service.GdprService;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
+import com.finsight.util.SecurityUtil;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 /**
  * GDPR Compliance REST Controller
@@ -31,10 +30,11 @@ import java.time.format.DateTimeFormatter;
 public class GdprController {
 
     private final GdprService gdprService;
+    private final SecurityUtil securityUtil;
 
-    @Autowired
-    public GdprController(GdprService gdprService) {
+    public GdprController(GdprService gdprService, SecurityUtil securityUtil) {
         this.gdprService = gdprService;
+        this.securityUtil = securityUtil;
     }
 
     /**
@@ -57,7 +57,7 @@ public class GdprController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GdprExportResponse> exportUserData(Authentication authentication) {
         String userEmail = authentication.getName();
-        Long userId = extractUserIdFromAuthentication(authentication);
+        Long userId = securityUtil.getCurrentUserId();
 
         GdprExportResponse response = gdprService.exportUserData(userId, userEmail);
 
@@ -92,13 +92,10 @@ public class GdprController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GdprDeleteResponse> requestDataDeletion(
             @RequestBody(required = false) GdprDeleteRequest request,
-            Authentication authentication,
-            HttpServletRequest httpRequest) {
+            Authentication authentication) {
         String userEmail = authentication.getName();
-        Long userId = extractUserIdFromAuthentication(authentication);
+        Long userId = securityUtil.getCurrentUserId();
         String reason = request != null ? request.getReason() : null;
-        String ipAddress = getClientIpAddress(httpRequest);
-
         String confirmationMessage = gdprService.requestDataDeletion(userId, reason, userEmail);
 
         return ResponseEntity.accepted()
@@ -125,7 +122,7 @@ public class GdprController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GdprDeleteResponse> cancelDataDeletion(Authentication authentication) {
         String userEmail = authentication.getName();
-        Long userId = extractUserIdFromAuthentication(authentication);
+        Long userId = securityUtil.getCurrentUserId();
 
         String confirmationMessage = gdprService.cancelDeletionRequest(userId, userEmail);
 
@@ -154,42 +151,12 @@ public class GdprController {
     @GetMapping("/status")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GdprStatusResponse> checkGdprStatus(Authentication authentication) {
-        Long userId = extractUserIdFromAuthentication(authentication);
+        Long userId = securityUtil.getCurrentUserId();
         GdprService.GdprComplianceStatus status = gdprService.checkGdprStatus(userId);
 
         return ResponseEntity.ok()
                 .header("X-GDPR-Compliant", "true")
                 .body(new GdprStatusResponse(status));
-    }
-
-    // ──── Helper Methods ────
-
-    /**
-     * Extract user ID from authentication object.
-     * Assumes the principal contains the user ID.
-     */
-    private Long extractUserIdFromAuthentication(Authentication authentication) {
-        // This is a placeholder implementation - actual implementation depends on your auth setup
-        // For now, returns a default value; should be replaced with actual user ID retrieval
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-            String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
-            // In real implementation, look up user ID by username/email
-        }
-        // Placeholder: you may need to implement actual user ID retrieval based on your auth system
-        return 1L;
-    }
-
-    /**
-     * Get client IP address from HTTP request.
-     * Handles proxied requests.
-     */
-    private String getClientIpAddress(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 
     // ──── DTOs ────

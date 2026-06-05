@@ -29,6 +29,11 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "User not found with email: " + email));
 
+        // Prevent soft-deleted (GDPR-pending) users from authenticating
+        if (user.isDeleted()) {
+            throw new UsernameNotFoundException("Account has been deactivated");
+        }
+
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
