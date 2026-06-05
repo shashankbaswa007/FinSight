@@ -11,7 +11,7 @@ ALTER TABLE users ADD COLUMN hard_delete_scheduled_at DATETIME(6) COMMENT 'Sched
 -- Indexes for GDPR queries
 CREATE INDEX idx_users_deleted_at ON users(deletion_requested_at);
 CREATE INDEX idx_users_hard_delete_scheduled ON users(hard_delete_scheduled_at);
-CREATE INDEX idx_users_active ON users(is_deleted) WHERE is_deleted = FALSE;
+CREATE INDEX idx_users_is_deleted ON users(is_deleted);
 
 -- ──── Create GDPR Audit Table ────
 CREATE TABLE IF NOT EXISTS gdpr_requests (
@@ -55,7 +55,8 @@ VALUES
     ('AUDIT_LOG', 365, TRUE, TRUE),
     ('BUDGET', 90, TRUE, FALSE),
     ('RECURRING_TRANSACTION', 90, TRUE, FALSE)
-ON DUPLICATE KEY UPDATE retention_days=VALUES(retention_days);
+AS new_values
+ON DUPLICATE KEY UPDATE retention_days=new_values.retention_days;
 
 -- ──── Create Anonymization Template Table ----
 CREATE TABLE IF NOT EXISTS anonymization_templates (
@@ -76,7 +77,8 @@ VALUES
     ('USER', 'name', 'MASK', 'Anonymous User'),
     ('TRANSACTION', 'description', 'MASK', '[DELETED]'),
     ('AUDIT_LOG', 'user_name', 'MASK', '[ANONYMIZED]')
-ON DUPLICATE KEY UPDATE anonymization_method=VALUES(anonymization_method);
+AS new_values
+ON DUPLICATE KEY UPDATE anonymization_method=new_values.anonymization_method;
 
 -- ──── Create View for GDPR Status ----
 CREATE OR REPLACE VIEW gdpr_deletion_schedule AS

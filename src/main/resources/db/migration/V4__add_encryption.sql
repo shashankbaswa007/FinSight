@@ -7,8 +7,7 @@
 ALTER TABLE transactions ADD COLUMN amount_encrypted LONGBLOB COMMENT 'AES-256 encrypted transaction amount';
 ALTER TABLE transactions ADD COLUMN description_encrypted LONGBLOB COMMENT 'AES-256 encrypted transaction description';
 
--- Create indexes on encrypted columns for new queries
-CREATE INDEX idx_transaction_user_date_encrypted ON transactions(user_id, date) WHERE amount_encrypted IS NOT NULL;
+-- MySQL does not support partial indexes; rely on existing idx_transaction_user_date.
 
 -- ──── Add Encrypted Columns to recurring_transactions ────
 ALTER TABLE recurring_transactions ADD COLUMN amount_encrypted LONGBLOB COMMENT 'AES-256 encrypted recurring amount';
