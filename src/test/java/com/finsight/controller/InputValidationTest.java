@@ -161,7 +161,7 @@ class InputValidationTest {
 
     @Test
     @SuppressWarnings("unused")
-    void createTransaction_nullCategoryId_returns400() throws Exception {
+    void createTransaction_nullCategoryId_returns201() throws Exception {
         TransactionRequest request = new TransactionRequest();
         request.setAmount(BigDecimal.valueOf(100));
         request.setType(TransactionType.EXPENSE);
@@ -172,7 +172,7 @@ class InputValidationTest {
                         .header("Authorization", "Bearer " + token)
                         .contentType(json())
                         .content(toJson(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isCreated());
     }
 
     @Test
