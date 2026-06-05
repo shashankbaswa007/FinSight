@@ -1,11 +1,14 @@
 package com.finsight.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
  * DTO representing a top-spending category with its total amount.
  */
-public class TopCategoryResponse {
+public class TopCategoryResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String categoryName;
     private BigDecimal totalAmount;

@@ -1,6 +1,5 @@
 package com.finsight.model;
 
-import com.finsight.security.EncryptionUtil;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -84,35 +83,37 @@ public class Transaction {
     }
 
     /**
-     * Called by Hibernate before storing entity. Encrypts sensitive fields.
-     * During migration period (V4-V5):
-     * - Writes to both old and new columns for backward compatibility
-     * After migration complete:
-     * - Old columns become read-only, only new encrypted columns are written
+     * Called by Hibernate before storing entity.
+     * 
+     * During the V4-V5 migration period, encryption is handled by the
+     * EncryptionMigrationService batch job which reads existing rows and writes
+     * encrypted values to amount_encrypted / description_encrypted.
+     * Once migration completes, this hook should be updated to encrypt on every write.
+     * 
+     * NOTE: This is intentionally a no-op during migration. Do NOT add encryption
+     * logic here until the migration is verified complete and old columns are dropped.
      */
     @PrePersist
     @PreUpdate
     public void encryptSensitiveData() {
-        // For now, keep writing to old columns during migration period
-        // The amountEncrypted and descriptionEncrypted fields will be populated
-        // by a separate migration job that reads old columns and encrypts them
-        
-        // This hook can be extended later to encrypt on-demand if needed
+        // Intentional no-op during V4-V5 migration period.
+        // Encryption is performed by EncryptionMigrationService batch job.
     }
 
     /**
      * Called by Hibernate after loading entity from database.
-     * Decrypts sensitive fields if they exist in encrypted columns.
-     * Falls back to unencrypted fields during migration period.
+     * 
+     * During migration, encrypted columns may be null — falls back to the
+     * unencrypted amount/description fields which remain the primary source.
+     * Once migration completes and old columns are dropped, this hook must
+     * decrypt from amountEncrypted / descriptionEncrypted.
+     * 
+     * NOTE: This is intentionally a no-op during migration.
      */
     @PostLoad
     public void decryptSensitiveData() {
-        // During migration period, encrypted columns will be null
-        // So we use the unencrypted amount and description
-        
-        // Once migration completes, encrypted columns will have data
-        // and we'll need to decrypt them here
-        // For now, this is a placeholder for future decryption logic
+        // Intentional no-op during V4-V5 migration period.
+        // Unencrypted columns remain the primary data source until migration completes.
     }
 
     // ──── Getters & Setters ────

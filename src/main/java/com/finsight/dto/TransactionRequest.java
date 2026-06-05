@@ -18,7 +18,6 @@ public class TransactionRequest {
     @NotNull(message = "Transaction type is required")
     private TransactionType type;
 
-    @NotNull(message = "Category ID is required")
     private Long categoryId;
 
     @Size(max = 500, message = "Description must not exceed 500 characters")

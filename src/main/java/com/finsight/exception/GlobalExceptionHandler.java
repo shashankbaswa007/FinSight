@@ -107,9 +107,13 @@ public class GlobalExceptionHandler {
     /** Catch-all handler for unexpected errors (500). */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        // Log the actual exception for debugging
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class)
+            .error("Unhandled exception caught by global handler: ", ex);
+            
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .message("An unexpected error occurred: " + ex.getMessage())
+                .message("An unexpected error occurred. Please try again later.")
                 .timestamp(LocalDateTime.now())
                 .build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);

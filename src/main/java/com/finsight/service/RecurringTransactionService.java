@@ -9,12 +9,14 @@ import com.finsight.repository.TransactionRepository;
 import com.finsight.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,7 +40,7 @@ public class RecurringTransactionService {
     }
 
     @Transactional
-    public RecurringTransactionResponse create(Long userId, RecurringTransactionRequest request) {
+    public RecurringTransactionResponse create(@NonNull Long userId, RecurringTransactionRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         Category category = categoryService.findById(request.getCategoryId());
@@ -60,14 +62,14 @@ public class RecurringTransactionService {
     }
 
     @Transactional(readOnly = true)
-    public List<RecurringTransactionResponse> getByUser(Long userId) {
+    public List<RecurringTransactionResponse> getByUser(@NonNull Long userId) {
         return recurringRepo.findByUserId(userId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void deactivate(Long userId, Long id) {
+    public void deactivate(@NonNull Long userId, @NonNull Long id) {
         RecurringTransaction rt = recurringRepo.findById(id)
                 .filter(r -> r.getUser().getId().equals(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("RecurringTransaction", "id", id));
@@ -99,7 +101,7 @@ public class RecurringTransactionService {
                     .description(rt.getDescription())
                     .date(rt.getNextOccurrence())
                     .build();
-            transactionRepository.save(tx);
+            transactionRepository.save(Objects.requireNonNull(tx, "transaction"));
 
             // Advance next occurrence
             rt.setNextOccurrence(calculateNext(rt.getNextOccurrence(), rt.getFrequency()));
@@ -111,12 +113,18 @@ public class RecurringTransactionService {
     }
 
     private LocalDate calculateNext(LocalDate current, RecurringFrequency frequency) {
-        return switch (frequency) {
-            case DAILY -> current.plusDays(1);
-            case WEEKLY -> current.plusWeeks(1);
-            case MONTHLY -> current.plusMonths(1);
-            case YEARLY -> current.plusYears(1);
-        };
+        switch (frequency) {
+            case DAILY:
+                return current.plusDays(1);
+            case WEEKLY:
+                return current.plusWeeks(1);
+            case MONTHLY:
+                return current.plusMonths(1);
+            case YEARLY:
+                return current.plusYears(1);
+            default:
+                throw new IllegalArgumentException("Unknown frequency: " + frequency);
+        }
     }
 
     private RecurringTransactionResponse mapToResponse(RecurringTransaction rt) {

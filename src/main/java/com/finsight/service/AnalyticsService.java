@@ -21,6 +21,7 @@ import com.finsight.dto.DailySpendingResponse;
 import com.finsight.dto.ExpenseDistributionResponse;
 import com.finsight.dto.MonthOverMonthResponse;
 import com.finsight.dto.MonthlySummaryResponse;
+import com.finsight.dto.SpendingForecastResponse;
 import com.finsight.dto.SpendingTrendResponse;
 import com.finsight.dto.TopCategoryResponse;
 import com.finsight.dto.TopDescriptionResponse;
@@ -308,5 +309,108 @@ public class AnalyticsService {
                         .count((Long) row[2])
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Spending forecast using 6-month moving average.
+     * 
+     * Algorithm:
+     * - Retrieves past 6 months of spending data (EXPENSE transactions only)
+     * - Calculates simple moving average (SMA) trend
+     * - Forecasts next 3 months based on average and trend
+     * - Includes confidence intervals (±10% from forecast)
+     * - Confidence level: HIGH if variance < 10%, MEDIUM if < 20%, else LOW
+     * 
+     * @param userId User ID
+     * @return SpendingForecastResponse with historical data, forecasts, and trend
+     */
+    @Cacheable(value = "spendingForecast", key = "#userId")
+    @Transactional(readOnly = true)
+    public SpendingForecastResponse getSpendingForecast(Long userId) {
+        // Get last 6 months of spending data
+        LocalDate endDate = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+
+        List<SpendingTrendResponse> trends = getSpendingTrends(userId, 6);
+
+        // Extract expense amounts for historical data and moving average calculation
+        List<Double> historicalExpenses = new ArrayList<>();
+        List<SpendingForecastResponse.HistoricalPoint> historicalPoints = new ArrayList<>();
+
+        for (SpendingTrendResponse trend : trends) {
+            double expense = trend.getTotalSpending().doubleValue();
+            historicalExpenses.add(expense);
+            historicalPoints.add(new SpendingForecastResponse.HistoricalPoint(
+                    trend.getMonth(),
+                    trend.getYear(),
+                    expense
+            ));
+        }
+
+        // Calculate 6-month simple moving average
+        double sma = historicalExpenses.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+
+        // Calculate trend: compare average of last 3 months vs first 3 months
+        double lastThreeAvg = historicalExpenses.stream()
+                .skip(Math.max(0, historicalExpenses.size() - 3))
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(sma);
+        double firstThreeAvg = historicalExpenses.stream()
+                .limit(3)
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(sma);
+        double trend = firstThreeAvg > 0 ? ((lastThreeAvg - firstThreeAvg) / firstThreeAvg) * 100 : 0; // Percentage change
+
+        // Calculate variance for confidence level
+        double mean = sma;
+        double variance = historicalExpenses.stream()
+                .mapToDouble(x -> Math.pow(x - mean, 2))
+                .average()
+                .orElse(0);
+        double stdDev = Math.sqrt(variance);
+        double coefficientOfVariation = mean > 0 ? (stdDev / mean) * 100 : 0;
+
+        String confidence;
+        if (coefficientOfVariation < 10) {
+            confidence = "HIGH";
+        } else if (coefficientOfVariation < 20) {
+            confidence = "MEDIUM";
+        } else {
+            confidence = "LOW";
+        }
+
+        // Generate 3-month forecasts
+        List<SpendingForecastResponse.ForecastPoint> forecasts = new ArrayList<>();
+        LocalDate currentDate = endDate.plusMonths(1).withDayOfMonth(1);
+
+        for (int i = 0; i < 3; i++) {
+            // Simple forecast: use moving average as base, apply trend adjustment
+            double forecastValue = sma * (1 + (trend / 100) * (i + 1) / 3);
+            double lowerBound = forecastValue * 0.9; // -10%
+            double upperBound = forecastValue * 1.1; // +10%
+
+            forecasts.add(new SpendingForecastResponse.ForecastPoint(
+                    currentDate.getMonthValue(),
+                    currentDate.getYear(),
+                    Math.round(forecastValue * 100.0) / 100.0,
+                    Math.round(lowerBound * 100.0) / 100.0,
+                    Math.round(upperBound * 100.0) / 100.0
+            ));
+
+            currentDate = currentDate.plusMonths(1);
+        }
+
+        LocalDate forecastEndDate = endDate.plusMonths(3);
+
+        return new SpendingForecastResponse(
+                forecasts,
+                historicalPoints,
+                Math.round(sma * 100.0) / 100.0,
+                Math.round(trend * 100.0) / 100.0,
+                confidence,
+                endDate.plusMonths(1),
+                forecastEndDate
+        );
     }
 }
