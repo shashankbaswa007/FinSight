@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -33,19 +34,21 @@ class ExportServiceTest {
     private Category foodCategory;
 
     @BeforeEach
+        @SuppressWarnings("unused")
     void setUp() {
         user = User.builder().id(1L).name("Test").email("test@test.com").password("pass").build();
         foodCategory = Category.builder().id(1L).name("Food").type(TransactionType.EXPENSE).build();
     }
 
     @Test
+        @SuppressWarnings("unused")
     void exportCsv_withDateRange_returnsCsvWithHeader() {
         Transaction tx = Transaction.builder()
                 .id(1L).user(user).amount(BigDecimal.valueOf(500))
                 .type(TransactionType.EXPENSE).category(foodCategory)
                 .description("Groceries").date(LocalDate.of(2024, 1, 15)).build();
 
-        Page<Transaction> page = new PageImpl<>(List.of(tx));
+        Page<Transaction> page = new PageImpl<>(Objects.requireNonNull(List.of(tx), "transactions"));
         when(transactionRepository.findByUserIdAndDateBetweenOrderByDateDesc(
                 eq(1L), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
@@ -63,6 +66,7 @@ class ExportServiceTest {
     }
 
     @Test
+        @SuppressWarnings("unused")
     void exportCsv_withoutDateRange_exportsAll() {
         Transaction tx1 = Transaction.builder()
                 .id(1L).user(user).amount(BigDecimal.valueOf(200))
@@ -74,7 +78,7 @@ class ExportServiceTest {
                 .category(Category.builder().id(2L).name("Salary").type(TransactionType.INCOME).build())
                 .description("Monthly Salary").date(LocalDate.of(2024, 1, 1)).build();
 
-        Page<Transaction> page = new PageImpl<>(List.of(tx1, tx2));
+        Page<Transaction> page = new PageImpl<>(Objects.requireNonNull(List.of(tx1, tx2), "transactions"));
         when(transactionRepository.findByUserIdOrderByDateDesc(eq(1L), any(Pageable.class)))
                 .thenReturn(page);
 
@@ -87,8 +91,9 @@ class ExportServiceTest {
     }
 
     @Test
+        @SuppressWarnings("unused")
     void exportCsv_emptyTransactions_returnsHeaderOnly() {
-        Page<Transaction> emptyPage = new PageImpl<>(List.of());
+                Page<Transaction> emptyPage = new PageImpl<>(Objects.requireNonNull(List.of(), "transactions"));
         when(transactionRepository.findByUserIdOrderByDateDesc(eq(1L), any(Pageable.class)))
                 .thenReturn(emptyPage);
 
@@ -99,13 +104,14 @@ class ExportServiceTest {
     }
 
     @Test
+        @SuppressWarnings("unused")
     void exportCsv_descriptionWithQuotes_escapesCorrectly() {
         Transaction tx = Transaction.builder()
                 .id(1L).user(user).amount(BigDecimal.valueOf(100))
                 .type(TransactionType.EXPENSE).category(foodCategory)
                 .description("Pizza \"Special\"").date(LocalDate.of(2024, 1, 10)).build();
 
-        Page<Transaction> page = new PageImpl<>(List.of(tx));
+        Page<Transaction> page = new PageImpl<>(Objects.requireNonNull(List.of(tx), "transactions"));
         when(transactionRepository.findByUserIdOrderByDateDesc(eq(1L), any(Pageable.class)))
                 .thenReturn(page);
 
@@ -117,13 +123,14 @@ class ExportServiceTest {
     }
 
     @Test
+        @SuppressWarnings("unused")
     void exportCsv_nullDescription_handledGracefully() {
         Transaction tx = Transaction.builder()
                 .id(1L).user(user).amount(BigDecimal.valueOf(100))
                 .type(TransactionType.EXPENSE).category(foodCategory)
                 .description(null).date(LocalDate.of(2024, 1, 10)).build();
 
-        Page<Transaction> page = new PageImpl<>(List.of(tx));
+        Page<Transaction> page = new PageImpl<>(Objects.requireNonNull(List.of(tx), "transactions"));
         when(transactionRepository.findByUserIdOrderByDateDesc(eq(1L), any(Pageable.class)))
                 .thenReturn(page);
 

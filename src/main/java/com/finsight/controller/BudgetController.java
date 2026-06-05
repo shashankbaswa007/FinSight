@@ -29,7 +29,7 @@ import jakarta.validation.Valid;
  * Allows users to set limits per category and check spending status.
  */
 @RestController
-@RequestMapping("/api/budgets")
+@RequestMapping("/api/v1/budgets")
 @Tag(name = "Budgets", description = "Set and track monthly budgets per category")
 public class BudgetController {
 

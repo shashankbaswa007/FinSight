@@ -3,9 +3,11 @@ import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertTriangle, RefreshCw, 
 import { analyticsApi } from '../api/analytics';
 import { transactionApi } from '../api/transactions';
 import { exportApi } from '../api/export';
-import type { MonthlySummaryResponse, TopCategoryResponse, SpendingTrendResponse, TransactionResponse, MonthOverMonthResponse } from '../types';
+import type { MonthlySummaryResponse, TopCategoryResponse, SpendingTrendResponse, TransactionResponse, MonthOverMonthResponse, SpendingForecastResponse } from '../types';
 import { formatCurrency, getCurrentMonthYear, getMonthName } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
+import { showErrorWithCorrelation } from '../utils/errorHandler';
+import SpendingForecastChart from '../components/analytics/SpendingForecastChart';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -21,6 +23,7 @@ export default function DashboardPage() {
   const [trends, setTrends] = useState<SpendingTrendResponse[]>([]);
   const [recentTx, setRecentTx] = useState<TransactionResponse[]>([]);
   const [mom, setMom] = useState<MonthOverMonthResponse | null>(null);
+  const [forecast, setForecast] = useState<SpendingForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -28,20 +31,22 @@ export default function DashboardPage() {
   async function loadData(showRefresh = false) {
     if (showRefresh) setRefreshing(true); else setLoading(true);
     try {
-      const [s, tc, tr, tx, m] = await Promise.all([
+      const [s, tc, tr, tx, m, f] = await Promise.all([
         analyticsApi.monthlySummary(month, year),
         analyticsApi.topCategories(month, year),
         analyticsApi.spendingTrends(6),
         transactionApi.list({ page: 0, size: 5 }),
         analyticsApi.monthOverMonth(month, year),
+        analyticsApi.spendingForecast(),
       ]);
       setSummary(s);
       setTopCats(tc);
       setTrends(tr);
       setRecentTx(tx.content);
       setMom(m);
-    } catch {
-      toast('error', 'Failed to load dashboard data');
+      setForecast(f);
+    } catch (error) {
+      showErrorWithCorrelation(toast, 'Failed to load dashboard data', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -61,8 +66,8 @@ export default function DashboardPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast('success', 'Transactions exported');
-    } catch {
-      toast('error', 'Export failed');
+    } catch (error) {
+      showErrorWithCorrelation(toast, 'Export failed', error);
     } finally { setExporting(false); }
   }
 
@@ -226,6 +231,14 @@ export default function DashboardPage() {
           <EmptyState message="No transactions yet. Start by adding your first transaction." />
         )}
       </div>
+
+      {/* Spending Forecast */}
+      {forecast ? (
+        <div className="card p-6">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Spending Forecast</h3>
+          <SpendingForecastChart data={forecast} />
+        </div>
+      ) : null}
     </div>
   );
 }

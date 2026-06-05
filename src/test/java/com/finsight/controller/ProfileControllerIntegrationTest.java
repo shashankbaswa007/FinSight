@@ -10,9 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.util.Objects;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -28,13 +31,14 @@ class ProfileControllerIntegrationTest {
     private String token;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() throws Exception {
         // Register a fresh user and get a JWT token
         RegisterRequest reg = new RegisterRequest(
                 "Profile User", "profile-" + System.nanoTime() + "@test.com", "Password1!");
-        MvcResult result = mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(reg)))
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
+                .contentType(json())
+                .content(toJson(reg)))
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -43,8 +47,9 @@ class ProfileControllerIntegrationTest {
     }
 
     @Test
+    @SuppressWarnings("unused")
     void getProfile_authenticated_returnsProfile() throws Exception {
-        mockMvc.perform(get("/api/profile")
+        mockMvc.perform(get("/api/v1/profile")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Profile User"))
@@ -53,60 +58,75 @@ class ProfileControllerIntegrationTest {
     }
 
     @Test
+    @SuppressWarnings("unused")
     void getProfile_unauthenticated_returns401() throws Exception {
-        mockMvc.perform(get("/api/profile"))
+        mockMvc.perform(get("/api/v1/profile"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void updateProfile_changeName_success() throws Exception {
         UpdateProfileRequest update = new UpdateProfileRequest();
         update.setName("Updated Name");
 
-        mockMvc.perform(put("/api/profile")
+        mockMvc.perform(put("/api/v1/profile")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(update)))
+                .contentType(json())
+                .content(toJson(update)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Name"));
     }
 
     @Test
+    @SuppressWarnings("unused")
     void changePassword_success() throws Exception {
         ChangePasswordRequest cpRequest = new ChangePasswordRequest();
         cpRequest.setCurrentPassword("Password1!");
         cpRequest.setNewPassword("NewPassword2@");
 
-        mockMvc.perform(put("/api/profile/password")
+        mockMvc.perform(put("/api/v1/profile/password")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(cpRequest)))
+                .contentType(json())
+                .content(toJson(cpRequest)))
                 .andExpect(status().isNoContent());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void changePassword_wrongCurrent_returns400() throws Exception {
         ChangePasswordRequest cpRequest = new ChangePasswordRequest();
         cpRequest.setCurrentPassword("WrongPassword1!");
         cpRequest.setNewPassword("NewPassword2@");
 
-        mockMvc.perform(put("/api/profile/password")
+        mockMvc.perform(put("/api/v1/profile/password")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(cpRequest)))
+                .contentType(json())
+                .content(toJson(cpRequest)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
+    @SuppressWarnings("unused")
     void changePassword_weakNewPassword_returns400() throws Exception {
         ChangePasswordRequest cpRequest = new ChangePasswordRequest();
         cpRequest.setCurrentPassword("Password1!");
         cpRequest.setNewPassword("weak"); // Doesn't meet complexity
 
-        mockMvc.perform(put("/api/profile/password")
+        mockMvc.perform(put("/api/v1/profile/password")
                         .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(cpRequest)))
+                        .contentType(json())
+                        .content(toJson(cpRequest)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @NonNull
+    private MediaType json() {
+        return Objects.requireNonNull(MediaType.APPLICATION_JSON, "applicationJson");
+    }
+
+    @NonNull
+    private String toJson(Object value) throws Exception {
+        return Objects.requireNonNull(objectMapper.writeValueAsString(value), "json");
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/export")
+@RequestMapping("/api/v1/export")
 @Tag(name = "Export", description = "Export financial data")
 public class ExportController {
 

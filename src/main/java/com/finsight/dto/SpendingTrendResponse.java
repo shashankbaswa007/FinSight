@@ -1,11 +1,14 @@
 package com.finsight.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
  * DTO for monthly spending trend data used in analytics.
  */
-public class SpendingTrendResponse {
+public class SpendingTrendResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Integer month;
     private Integer year;

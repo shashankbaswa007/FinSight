@@ -9,6 +9,10 @@ import type {
   CategoryTrendResponse,
   ExpenseDistributionResponse,
   TopDescriptionResponse,
+  SpendingForecastResponse,
+  ReconciliationTrendResponse,
+  DeliveryAnalyticsResponse,
+  FxHistoryResponse,
 } from '../types';
 
 export const analyticsApi = {
@@ -38,4 +42,16 @@ export const analyticsApi = {
 
   topDescriptions: (month: number, year: number, limit: number = 10) =>
     api.get<TopDescriptionResponse[]>(`/analytics/top-descriptions?month=${month}&year=${year}&limit=${limit}`).then((r) => r.data),
+
+  spendingForecast: () =>
+    api.get<SpendingForecastResponse>('/analytics/spending-forecast').then((r) => r.data),
+
+  reconciliationTrends: (months: number = 6) =>
+    api.get<ReconciliationTrendResponse[]>(`/analytics/reconciliation-trends?months=${months}`).then((r) => r.data),
+
+  deliveryAnalytics: (days: number = 30) =>
+    api.get<DeliveryAnalyticsResponse>(`/analytics/delivery-analytics?days=${days}`).then((r) => r.data),
+
+  fxHistory: (from: string, to: string, days: number = 30) =>
+    api.get<FxHistoryResponse>(`/analytics/fx-history?from=${from}&to=${to}&days=${days}`).then((r) => r.data),
 };

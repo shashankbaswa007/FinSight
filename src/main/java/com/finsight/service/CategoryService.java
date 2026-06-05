@@ -56,6 +56,21 @@ public class CategoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
     }
 
+    /** Find or create default Uncategorized category for async tasks */
+    @Transactional
+    public Category getOrCreateDefaultCategory() {
+        return categoryRepository.findAll().stream()
+                .filter(c -> c.getName().equalsIgnoreCase("Other") || c.getName().equalsIgnoreCase("Uncategorized"))
+                .findFirst()
+                .orElseGet(() -> {
+                    Category cat = Category.builder()
+                            .name("Uncategorized")
+                            .type(com.finsight.model.TransactionType.EXPENSE)
+                            .build();
+                    return categoryRepository.save(cat);
+                });
+    }
+
     private CategoryResponse mapToResponse(Category category) {
         return CategoryResponse.builder()
                 .id(category.getId())

@@ -32,6 +32,7 @@ class TransactionServiceTest {
     @Mock private TransactionRepository transactionRepository;
     @Mock private UserRepository userRepository;
     @Mock private CategoryService categoryService;
+    @SuppressWarnings("unused")
     @Mock private TransactionAuditService auditService;
 
     @InjectMocks
@@ -42,6 +43,7 @@ class TransactionServiceTest {
     private Transaction transaction;
 
     @BeforeEach
+    @SuppressWarnings("unused")
     void setUp() {
         user = User.builder().id(1L).name("Test").email("test@test.com").password("pass").build();
         category = Category.builder().id(1L).name("Food").type(TransactionType.EXPENSE).build();
@@ -52,6 +54,7 @@ class TransactionServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unused", "null"})
     void createTransaction_success() {
         TransactionRequest request = new TransactionRequest();
         request.setAmount(BigDecimal.valueOf(100));
@@ -73,6 +76,7 @@ class TransactionServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unused")
     void createTransaction_userNotFoundThrows() {
         TransactionRequest request = new TransactionRequest();
         request.setCategoryId(1L);
@@ -84,6 +88,7 @@ class TransactionServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unused", "null"})
     void updateTransaction_success() {
         TransactionRequest request = new TransactionRequest();
         request.setAmount(BigDecimal.valueOf(200));
@@ -101,6 +106,7 @@ class TransactionServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unused", "null"})
     void deleteTransaction_success() {
         when(transactionRepository.findByIdAndUserId(1L, 1L)).thenReturn(Optional.of(transaction));
 
@@ -110,6 +116,7 @@ class TransactionServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unused")
     void deleteTransaction_notFoundThrows() {
         when(transactionRepository.findByIdAndUserId(99L, 1L)).thenReturn(Optional.empty());
 

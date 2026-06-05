@@ -32,7 +32,7 @@ import jakarta.validation.Valid;
  * Supports CRUD operations, filtering, pagination, and monthly summaries.
  */
 @RestController
-@RequestMapping("/api/transactions")
+@RequestMapping("/api/v1/transactions")
 @Tag(name = "Transactions", description = "Manage income and expense transactions")
 public class TransactionController {
 

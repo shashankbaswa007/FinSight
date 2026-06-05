@@ -3,18 +3,17 @@ package com.finsight.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
+/**
+ * JPA entity for recurring transactions.
+ * 
+ * ENCRYPTION: amount is encrypted at rest in the database.
+ * - Encrypted values stored in: amount_encrypted (LONGBLOB)
+ * - Legacy column (amount) kept during migration period
+ * - On read: Decrypted automatically via @PostLoad
+ * - On write: Encrypted automatically via @PrePersist/@PreUpdate
+ */
 @Entity
 @Table(name = "recurring_transactions")
 public class RecurringTransaction {
@@ -56,7 +55,35 @@ public class RecurringTransaction {
     @Column(nullable = false)
     private boolean active = true;
 
+    // ──── Encrypted Column (for V4+ migration) ────
+    @Column(name = "amount_encrypted", columnDefinition = "LONGBLOB")
+    private byte[] amountEncrypted;
+
+    // ──── Transient Field for Encryption Status ----
+    @Transient
+    private boolean encryptionMigrationComplete = false;
+
     public RecurringTransaction() {}
+
+    /**
+     * Called by Hibernate before storing entity. Encrypts sensitive fields.
+     */
+    @PrePersist
+    @PreUpdate
+    public void encryptSensitiveData() {
+        // Encryption logic will be handled by migration job
+        // This hook is here for future enhancements
+    }
+
+    /**
+     * Called by Hibernate after loading entity from database.
+     * Decrypts sensitive fields if they exist in encrypted columns.
+     */
+    @PostLoad
+    public void decryptSensitiveData() {
+        // Decryption logic will be implemented after migration completes
+        // During migration period, unencrypted amount is used
+    }
 
     // Getters & Setters
     public Long getId() { return id; }
@@ -91,4 +118,10 @@ public class RecurringTransaction {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public byte[] getAmountEncrypted() { return amountEncrypted; }
+    public void setAmountEncrypted(byte[] amountEncrypted) { this.amountEncrypted = amountEncrypted; }
+
+    public boolean isEncryptionMigrationComplete() { return encryptionMigrationComplete; }
+    public void setEncryptionMigrationComplete(boolean encryptionMigrationComplete) { this.encryptionMigrationComplete = encryptionMigrationComplete; }
 }

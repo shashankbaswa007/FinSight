@@ -10,6 +10,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import RecurringPage from './pages/RecurringPage';
 import SettingsPage from './pages/SettingsPage';
+import ReconciliationPage from './pages/ReconciliationPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="budgets" element={<BudgetsPage />} />
+        <Route path="reconciliation" element={<ReconciliationPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="recurring" element={<RecurringPage />} />

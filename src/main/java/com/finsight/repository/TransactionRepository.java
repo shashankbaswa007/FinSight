@@ -66,6 +66,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
+    /** Get latest 100 transactions for a user. */
+    List<Transaction> findTop100ByUserIdOrderByDateDesc(Long userId);
+
     /** Sum spending for a user in a specific category and date range. */
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
            "WHERE t.user.id = :userId AND t.category.id = :categoryId " +
@@ -98,6 +101,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     /** Fetch all expense transactions for a user (used in anomaly detection). */
     List<Transaction> findByUserIdAndType(Long userId, TransactionType type);
+
+    /** Find all transactions for a user on a specific date (reconciliation). */
+    List<Transaction> findByUserIdAndDate(Long userId, LocalDate date);
+
+    /** Find all transactions for a user (GDPR export). */
+    List<Transaction> findByUserId(Long userId);
+
+    /** Delete all transactions for a user (GDPR hard-delete). */
+    void deleteByUserId(Long userId);
 
     /** Daily expense totals for a user within a date range. */
     @Query("SELECT t.date, SUM(t.amount) FROM Transaction t " +

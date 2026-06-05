@@ -8,6 +8,7 @@ import com.finsight.model.TransactionType;
 import com.finsight.model.User;
 import com.finsight.repository.TransactionRepository;
 import com.finsight.repository.UserRepository;
+import org.springframework.lang.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -30,20 +32,36 @@ public class TransactionService {
     private final UserRepository userRepository;
     private final CategoryService categoryService;
     private final TransactionAuditService auditService;
+    private final CategorizationEventPublisher categorizationEventPublisher;
+    private final RagDocumentIngestionService ragDocumentIngestionService;
 
     public TransactionService(TransactionRepository transactionRepository, UserRepository userRepository,
-                              CategoryService categoryService, TransactionAuditService auditService) {
+                              CategoryService categoryService, TransactionAuditService auditService,
+                              CategorizationEventPublisher categorizationEventPublisher,
+                              RagDocumentIngestionService ragDocumentIngestionService) {
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.categoryService = categoryService;
         this.auditService = auditService;
+        this.categorizationEventPublisher = categorizationEventPublisher;
+        this.ragDocumentIngestionService = ragDocumentIngestionService;
     }
 
     /** Create a new transaction linked to the authenticated user. */
     @Transactional
-    public TransactionResponse createTransaction(Long userId, TransactionRequest request) {
+    public TransactionResponse createTransaction(@NonNull Long userId, TransactionRequest request) {
         User user = findUserById(userId);
-        Category category = categoryService.findById(request.getCategoryId());
+        
+        Category category;
+        boolean requiresAsyncCategorization = false;
+        
+        if (request.getCategoryId() != null) {
+            category = categoryService.findById(request.getCategoryId());
+        } else {
+            // Provide a default category temporarily and queue async AI job
+            category = categoryService.getOrCreateDefaultCategory();
+            requiresAsyncCategorization = true;
+        }
 
         Transaction transaction = Transaction.builder()
                 .user(user)
@@ -54,14 +72,21 @@ public class TransactionService {
                 .date(request.getDate())
                 .build();
 
-        transaction = transactionRepository.save(transaction);
+        transaction = transactionRepository.save(Objects.requireNonNull(transaction, "transaction"));
         auditService.logCreate(transaction, user.getEmail());
+        
+        if (requiresAsyncCategorization) {
+            categorizationEventPublisher.publishCategorizationEvent(transaction.getId(), request.getDescription());
+        }
+        
+        triggerRagIngestion(userId);
+        
         return mapToResponse(transaction);
     }
 
     /** Update an existing transaction owned by the user. */
     @Transactional
-    public TransactionResponse updateTransaction(Long userId, Long transactionId, TransactionRequest request) {
+    public TransactionResponse updateTransaction(@NonNull Long userId, @NonNull Long transactionId, TransactionRequest request) {
         Transaction transaction = findByIdAndUser(transactionId, userId);
 
         // Capture old values before mutation
@@ -70,7 +95,15 @@ public class TransactionService {
         String oldCategory = transaction.getCategory().getName();
         String oldDescription = transaction.getDescription();
 
-        Category category = categoryService.findById(request.getCategoryId());
+        Category category;
+        boolean requiresAsyncCategorization = false;
+        
+        if (request.getCategoryId() != null) {
+            category = categoryService.findById(request.getCategoryId());
+        } else {
+            category = transaction.getCategory(); // Fallback to existing category
+            requiresAsyncCategorization = true;
+        }
 
         transaction.setAmount(request.getAmount());
         transaction.setType(request.getType());
@@ -81,15 +114,24 @@ public class TransactionService {
         transaction = transactionRepository.save(transaction);
         auditService.logUpdate(transaction, oldAmount, oldType, oldCategory, oldDescription,
                 transaction, transaction.getUser().getEmail());
+                
+        if (requiresAsyncCategorization) {
+            categorizationEventPublisher.publishCategorizationEvent(transaction.getId(), request.getDescription());
+        }
+                
+        triggerRagIngestion(userId);
+        
         return mapToResponse(transaction);
     }
 
     /** Delete a transaction owned by the user. */
     @Transactional
-    public void deleteTransaction(Long userId, Long transactionId) {
+    public void deleteTransaction(@NonNull Long userId, @NonNull Long transactionId) {
         Transaction transaction = findByIdAndUser(transactionId, userId);
         auditService.logDelete(transaction, transaction.getUser().getEmail());
         transactionRepository.delete(transaction);
+        
+        triggerRagIngestion(userId);
     }
 
     /**
@@ -98,7 +140,7 @@ public class TransactionService {
      */
     @Transactional(readOnly = true)
     public PagedResponse<TransactionResponse> getTransactions(
-            Long userId, TransactionType type, Long categoryId, LocalDate startDate, LocalDate endDate,
+            @NonNull Long userId, TransactionType type, Long categoryId, LocalDate startDate, LocalDate endDate,
             int page, int size) {
 
         Pageable pageable = PageRequest.of(page, size);
@@ -121,7 +163,7 @@ public class TransactionService {
 
     /** Get a monthly transaction summary (income vs. expense) for a given month/year. */
     @Transactional(readOnly = true)
-    public MonthlyTransactionSummary getMonthlyTransactionSummary(Long userId, int month, int year) {
+    public MonthlyTransactionSummary getMonthlyTransactionSummary(@NonNull Long userId, int month, int year) {
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
@@ -145,14 +187,20 @@ public class TransactionService {
 
     // ──────── Helpers ────────
 
-    private Transaction findByIdAndUser(Long transactionId, Long userId) {
-        return transactionRepository.findByIdAndUserId(transactionId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Transaction", "id", transactionId));
+    private @NonNull Transaction findByIdAndUser(@NonNull Long transactionId, @NonNull Long userId) {
+        return Objects.requireNonNull(
+                transactionRepository.findByIdAndUserId(transactionId, userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Transaction", "id", transactionId)),
+                "transaction"
+        );
     }
 
-    private User findUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+    private @NonNull User findUserById(@NonNull Long userId) {
+        return Objects.requireNonNull(
+                userRepository.findById(userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId)),
+                "user"
+        );
     }
 
     private TransactionResponse mapToResponse(Transaction t) {
@@ -166,5 +214,20 @@ public class TransactionService {
                 .date(t.getDate())
                 .createdAt(t.getCreatedAt())
                 .build();
+    }
+
+    private void triggerRagIngestion(Long userId) {
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        ragDocumentIngestionService.ingestUserData(userId);
+                    }
+                }
+            );
+        } else {
+            ragDocumentIngestionService.ingestUserData(userId);
+        }
     }
 }

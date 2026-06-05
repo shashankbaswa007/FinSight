@@ -19,4 +19,7 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
 
     Optional<Budget> findByUserIdAndCategoryIdAndMonthAndYear(
             Long userId, Long categoryId, Integer month, Integer year);
+
+    /** Delete all budgets for a user (GDPR hard-delete). */
+    void deleteByUserId(Long userId);
 }

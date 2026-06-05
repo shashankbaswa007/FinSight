@@ -111,6 +111,14 @@ public class BudgetService {
                 .orElseThrow(() -> new ResourceNotFoundException("Budget", "id", budgetId));
 
         budget.setMonthlyLimit(request.getMonthlyLimit());
+        budget.setMonth(request.getMonth());
+        budget.setYear(request.getYear());
+        
+        if (!budget.getCategory().getId().equals(request.getCategoryId())) {
+            Category newCategory = categoryService.findById(request.getCategoryId());
+            budget.setCategory(newCategory);
+        }
+        
         budget = budgetRepository.save(budget);
         return mapToResponse(budget);
     }

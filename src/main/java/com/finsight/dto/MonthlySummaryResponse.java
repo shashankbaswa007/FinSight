@@ -1,11 +1,14 @@
 package com.finsight.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
  * DTO for a monthly financial summary: total income, expenses, and net savings.
  */
-public class MonthlySummaryResponse {
+public class MonthlySummaryResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Integer month;
     private Integer year;
