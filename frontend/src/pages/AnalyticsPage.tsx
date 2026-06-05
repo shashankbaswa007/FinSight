@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   BarChart3, AlertTriangle, TrendingUp, TrendingDown, Wallet, PiggyBank,
-  ArrowUpRight, ArrowDownRight, Calendar, Layers, Receipt,
+  ArrowUpRight, ArrowDownRight, Calendar, Layers, Receipt, Activity, Globe,
 } from 'lucide-react';
 import { analyticsApi } from '../api/analytics';
 import type {
@@ -9,18 +9,20 @@ import type {
   MonthlySummaryResponse, MonthOverMonthResponse,
   DailySpendingResponse, CategoryTrendResponse,
   ExpenseDistributionResponse, TopDescriptionResponse,
+  ReconciliationTrendResponse, DeliveryAnalyticsResponse, FxHistoryResponse,
 } from '../types';
 import { formatCurrency, getMonthName, getCurrentMonthYear } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, ComposedChart,
 } from 'recharts';
 
 const PIE_COLORS = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
 const CATEGORY_COLORS = ['#6366f1', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#a855f7', '#84cc16'];
 
 const tooltipStyle = { backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc' };
+const isFxCode = (value: string) => /^[A-Z]{3}$/.test(value.trim());
 
 export default function AnalyticsPage() {
   const { toast } = useToast();
@@ -40,13 +42,25 @@ export default function AnalyticsPage() {
   const [distribution, setDistribution] = useState<ExpenseDistributionResponse[]>([]);
   const [topDescs, setTopDescs] = useState<TopDescriptionResponse[]>([]);
 
+  const [reconTrends, setReconTrends] = useState<ReconciliationTrendResponse[]>([]);
+  const [deliveryAnalytics, setDeliveryAnalytics] = useState<DeliveryAnalyticsResponse | null>(null);
+  const [fxHistory, setFxHistory] = useState<FxHistoryResponse | null>(null);
+  const [deliveryDays, setDeliveryDays] = useState(30);
+  const [fxFrom, setFxFrom] = useState('USD');
+  const [fxTo, setFxTo] = useState('INR');
+  const [fxDays, setFxDays] = useState(30);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const [tr, tc, an, sum, mo, ds, ct, ed, td] = await Promise.all([
+        const fxValid = isFxCode(fxFrom) && isFxCode(fxTo);
+        const fxPromise = fxValid
+          ? analyticsApi.fxHistory(fxFrom, fxTo, fxDays)
+          : Promise.resolve(null);
+        const [tr, tc, an, sum, mo, ds, ct, ed, td, rt, da, fx] = await Promise.all([
           analyticsApi.spendingTrends(months),
           analyticsApi.topCategories(month, year),
           analyticsApi.anomalies(),
@@ -56,6 +70,9 @@ export default function AnalyticsPage() {
           analyticsApi.categoryTrends(months),
           analyticsApi.expenseDistribution(month, year),
           analyticsApi.topDescriptions(month, year),
+          analyticsApi.reconciliationTrends(months),
+          analyticsApi.deliveryAnalytics(deliveryDays),
+          fxPromise,
         ]);
         setTrends(tr);
         setTopCats(tc);
@@ -66,12 +83,15 @@ export default function AnalyticsPage() {
         setCategoryTrends(ct);
         setDistribution(ed);
         setTopDescs(td);
+        setReconTrends(rt);
+        setDeliveryAnalytics(da);
+        setFxHistory(fx ?? null);
       } catch {
         toast('error', 'Failed to load analytics data');
       } finally { setLoading(false); }
     }
     load();
-  }, [months, month, year]);
+  }, [months, month, year, deliveryDays, fxFrom, fxTo, fxDays]);
 
   /* ── Derived data ── */
   const trendData = trends.map((t) => ({
@@ -112,13 +132,24 @@ export default function AnalyticsPage() {
   // Distribution data for bar chart
   const distData = distribution.filter((d) => d.count > 0);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="h-8 w-8 border-4 border-brand-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const reconData = reconTrends.map((r) => ({
+    name: `${getMonthName(r.month).slice(0, 3)} ${r.year}`,
+    Completed: r.completedBatches,
+    Failed: r.failedBatches,
+    Total: r.totalBatches,
+    SuccessRate: r.successRate,
+    Discrepancy: r.discrepancyTotal,
+  }));
+
+  const fxData = fxHistory?.points.map((p) => ({
+    date: p.date.slice(5),
+    rate: p.rate,
+    source: p.source,
+  })) ?? [];
+
+  const fxFromValid = isFxCode(fxFrom);
+  const fxToValid = isFxCode(fxTo);
+  const fxPairValid = fxFromValid && fxToValid;
 
   return (
     <div className="space-y-6 page-enter">
@@ -398,6 +429,134 @@ export default function AnalyticsPage() {
           <EmptyChart message="No description data for this month." />
         )}
       </div>
+
+      {/* ⑩ Reconciliation trends */}
+      <div className="card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="h-5 w-5 text-brand-600" />
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Reconciliation Trends</h3>
+          <span className="ml-auto text-xs text-gray-400 dark:text-slate-500">Last {months} months</span>
+        </div>
+        {loading ? (
+          <ChartSkeleton height={320} />
+        ) : reconData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={320}>
+            <ComposedChart data={reconData}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
+              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+              <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fill: '#94a3b8', fontSize: 12 }} unit="%" />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(v: number, name: string) => name === 'Success Rate' ? `${v}%` : `${v}`}
+              />
+              <Legend />
+              <Bar yAxisId="left" dataKey="Completed" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="left" dataKey="Failed" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="SuccessRate" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} name="Success Rate" />
+            </ComposedChart>
+          </ResponsiveContainer>
+        ) : (
+          <EmptyChart message="No reconciliation trend data yet." />
+        )}
+      </div>
+
+      {/* ⑪ Delivery analytics + FX history */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="card p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-5 w-5 text-brand-600" />
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Delivery Analytics</h3>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-gray-400 dark:text-slate-500">Window</span>
+              <select
+                className="input-field w-auto !py-1.5 !text-xs"
+                value={deliveryDays}
+                onChange={(e) => setDeliveryDays(Number(e.target.value))}
+              >
+                <option value={7}>7d</option>
+                <option value={30}>30d</option>
+                <option value={60}>60d</option>
+                <option value={90}>90d</option>
+              </select>
+            </div>
+          </div>
+          {loading ? (
+            <DeliverySkeleton />
+          ) : deliveryAnalytics ? (
+            <div className="space-y-4">
+              <DeliveryCard
+                title="Email Digests"
+                metrics={deliveryAnalytics.notificationEmail}
+              />
+              <DeliveryCard
+                title="Webhooks"
+                metrics={deliveryAnalytics.webhook}
+              />
+            </div>
+          ) : (
+            <EmptyChart message="No delivery analytics available." />
+          )}
+        </div>
+
+        <div className="card p-6">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <Globe className="h-5 w-5 text-brand-600" />
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">FX History</h3>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <input
+                className={`input-field w-20 !py-1.5 !text-xs ${fxFromValid ? '' : '!border-rose-500 !focus:ring-rose-500'}`}
+                value={fxFrom}
+                onChange={(e) => setFxFrom(e.target.value.toUpperCase())}
+                maxLength={3}
+                aria-label="From currency"
+                aria-invalid={!fxFromValid}
+              />
+              <span className="text-xs text-gray-400">to</span>
+              <input
+                className={`input-field w-20 !py-1.5 !text-xs ${fxToValid ? '' : '!border-rose-500 !focus:ring-rose-500'}`}
+                value={fxTo}
+                onChange={(e) => setFxTo(e.target.value.toUpperCase())}
+                maxLength={3}
+                aria-label="To currency"
+                aria-invalid={!fxToValid}
+              />
+              <select
+                className="input-field w-auto !py-1.5 !text-xs"
+                value={fxDays}
+                onChange={(e) => setFxDays(Number(e.target.value))}
+              >
+                <option value={7}>7d</option>
+                <option value={30}>30d</option>
+                <option value={90}>90d</option>
+                <option value={180}>180d</option>
+              </select>
+            </div>
+            {!fxPairValid && (
+              <p className="w-full text-xs text-rose-500 mt-1">Use 3-letter currency codes like USD and EUR.</p>
+            )}
+          </div>
+          {loading ? (
+            <ChartSkeleton height={280} />
+          ) : fxPairValid && fxData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={fxData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-slate-700" />
+                <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  formatter={(v: number) => v.toFixed(4)}
+                  labelFormatter={(l) => `Date ${l}`}
+                />
+                <Line type="monotone" dataKey="rate" stroke="#10b981" strokeWidth={2.5} dot={{ r: 2 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChart message={fxPairValid ? 'No FX history available for this pair.' : 'Enter valid currency codes to view FX history.'} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -444,6 +603,65 @@ function EmptyChart({ message }: { message: string }) {
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <BarChart3 className="h-10 w-10 text-gray-300 dark:text-slate-600 mb-3" />
       <p className="text-sm text-gray-400 dark:text-slate-500">{message}</p>
+    </div>
+  );
+}
+
+function DeliveryCard({ title, metrics }: {
+  title: string;
+  metrics: { total: number; succeeded: number; failed: number; pending: number; successRate: number; averageAttempts: number };
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 dark:border-slate-700/60 p-4 bg-white/70 dark:bg-slate-900/40">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">{title}</p>
+        <span className="text-xs text-gray-400 dark:text-slate-500">Success {metrics.successRate.toFixed(1)}%</span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+        <Stat label="Total" value={metrics.total} />
+        <Stat label="Succeeded" value={metrics.succeeded} />
+        <Stat label="Failed" value={metrics.failed} />
+        <Stat label="Pending" value={metrics.pending} />
+        <Stat label="Avg Attempts" value={metrics.averageAttempts.toFixed(2)} />
+      </div>
+    </div>
+  );
+}
+
+function ChartSkeleton({ height }: { height: number }) {
+  return (
+    <div className="animate-pulse">
+      <div className="h-4 w-32 bg-gray-200 dark:bg-slate-700 rounded mb-4" />
+      <div className="w-full rounded-xl bg-gray-100 dark:bg-slate-800/60" style={{ height }} />
+    </div>
+  );
+}
+
+function DeliverySkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      {[0, 1].map((i) => (
+        <div key={i} className="rounded-xl border border-gray-200 dark:border-slate-700/60 p-4">
+          <div className="flex items-center justify-between">
+            <div className="h-3 w-28 bg-gray-200 dark:bg-slate-700 rounded" />
+            <div className="h-3 w-20 bg-gray-200 dark:bg-slate-700 rounded" />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {[0, 1, 2, 3, 4].map((j) => (
+              <div key={j} className="h-8 rounded-lg bg-gray-100 dark:bg-slate-800/60" />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-slate-800/60 px-2.5 py-2">
+      <span className="text-gray-500 dark:text-slate-400">{label}</span>
+      <span className="font-medium text-gray-900 dark:text-slate-100">{value}</span>
     </div>
   );
 }

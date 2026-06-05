@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Note: CorrelationContext is set up at the app level, we store correlation IDs
+// in sessionStorage so they're accessible across the entire app
+const CORRELATION_ID_KEY = 'X-Request-ID';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: '/api/v1',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -14,10 +18,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 responses (expired token)
+// Capture correlation ID from responses and handle 401 responses
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Capture and store correlation ID from response header
+    const correlationId = response.headers[CORRELATION_ID_KEY.toLowerCase()];
+    if (correlationId) {
+      sessionStorage.setItem(CORRELATION_ID_KEY, correlationId);
+    }
+    return response;
+  },
   (error) => {
+    // Capture correlation ID even on error responses
+    const correlationId = error.response?.headers[CORRELATION_ID_KEY.toLowerCase()];
+    if (correlationId) {
+      sessionStorage.setItem(CORRELATION_ID_KEY, correlationId);
+    }
+
+    // Handle 401 responses (expired token)
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -26,5 +44,13 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * Get the most recent correlation ID for the current session.
+ * Useful for displaying in error messages or support interfaces.
+ */
+export const getCorrelationId = (): string | null => {
+  return sessionStorage.getItem(CORRELATION_ID_KEY);
+};
 
 export default api;

@@ -9,11 +9,13 @@ import {
   TrendingUp,
   Repeat,
   Settings,
+  ClipboardCheck,
 } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
+  { to: '/reconciliation', label: 'Reconciliation', icon: ClipboardCheck },
   { to: '/budgets', label: 'Budgets', icon: Wallet },
   { to: '/recurring', label: 'Recurring', icon: Repeat },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },

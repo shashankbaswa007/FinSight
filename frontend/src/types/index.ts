@@ -172,6 +172,36 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+/* ───── Reconciliation Schedule ───── */
+export interface ReconciliationScheduleSettingsResponse {
+  globalEnabled: boolean;
+  cron: string;
+  enabled: boolean;
+}
+
+export interface UpdateReconciliationScheduleRequest {
+  enabled: boolean;
+}
+
+/* ───── Notification Preferences ───── */
+export type NotificationAlertFrequency = 'REAL_TIME' | 'DAILY' | 'WEEKLY';
+
+export interface NotificationPreferencesResponse {
+  budgetAlertsEnabled: boolean;
+  budgetAlertThreshold: number;
+  alertEmail: boolean;
+  alertInApp: boolean;
+  alertFrequency: NotificationAlertFrequency;
+}
+
+export interface UpdateNotificationPreferencesRequest {
+  budgetAlertsEnabled: boolean;
+  budgetAlertThreshold: number;
+  alertEmail: boolean;
+  alertInApp: boolean;
+  alertFrequency: NotificationAlertFrequency;
+}
+
 /* ───── Month-over-Month ───── */
 export interface MonthOverMonthResponse {
   currentMonth: number;
@@ -209,4 +239,72 @@ export interface TopDescriptionResponse {
   description: string;
   totalAmount: number;
   count: number;
+}
+
+export interface SpendingForecastResponse {
+  forecasts: ForecastPoint[];
+  historical: HistoricalPoint[];
+  averageMonthlySpending: number;
+  trend: number; // Percentage change
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  forecastStartDate: string;
+  forecastEndDate: string;
+  algorithm: string;
+}
+
+export interface ForecastPoint {
+  month: number;
+  year: number;
+  forecast: number;
+  lowerBound: number;
+  upperBound: number;
+}
+
+export interface HistoricalPoint {
+  month: number;
+  year: number;
+  actual: number;
+}
+
+/* ───── Operational Analytics ───── */
+export interface ReconciliationTrendResponse {
+  month: number;
+  year: number;
+  totalBatches: number;
+  completedBatches: number;
+  failedBatches: number;
+  matchedTransactions: number;
+  unmatchedTransactions: number;
+  discrepancyTotal: number;
+  successRate: number;
+}
+
+export interface DeliveryChannelMetricsResponse {
+  total: number;
+  succeeded: number;
+  failed: number;
+  pending: number;
+  successRate: number;
+  averageAttempts: number;
+}
+
+export interface DeliveryAnalyticsResponse {
+  start: string;
+  end: string;
+  notificationEmail: DeliveryChannelMetricsResponse;
+  webhook: DeliveryChannelMetricsResponse;
+}
+
+export interface FxRatePointResponse {
+  date: string;
+  rate: number;
+  source: string;
+}
+
+export interface FxHistoryResponse {
+  fromCurrency: string;
+  toCurrency: string;
+  startDate: string;
+  endDate: string;
+  points: FxRatePointResponse[];
 }
