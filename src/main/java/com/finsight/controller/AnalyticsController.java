@@ -11,13 +11,18 @@ import org.springframework.web.bind.annotation.RestController;
 import com.finsight.dto.AnomalyResponse;
 import com.finsight.dto.CategoryTrendResponse;
 import com.finsight.dto.DailySpendingResponse;
+import com.finsight.dto.DeliveryAnalyticsResponse;
 import com.finsight.dto.ExpenseDistributionResponse;
+import com.finsight.dto.FxHistoryResponse;
 import com.finsight.dto.MonthOverMonthResponse;
 import com.finsight.dto.MonthlySummaryResponse;
+import com.finsight.dto.ReconciliationTrendResponse;
+import com.finsight.dto.SpendingForecastResponse;
 import com.finsight.dto.SpendingTrendResponse;
 import com.finsight.dto.TopCategoryResponse;
 import com.finsight.dto.TopDescriptionResponse;
 import com.finsight.service.AnalyticsService;
+import com.finsight.service.OperationalAnalyticsService;
 import com.finsight.util.SecurityUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,10 +38,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
+    private final OperationalAnalyticsService operationalAnalyticsService;
     private final SecurityUtil securityUtil;
 
-    public AnalyticsController(AnalyticsService analyticsService, SecurityUtil securityUtil) {
+    public AnalyticsController(AnalyticsService analyticsService,
+                               OperationalAnalyticsService operationalAnalyticsService,
+                               SecurityUtil securityUtil) {
         this.analyticsService = analyticsService;
+        this.operationalAnalyticsService = operationalAnalyticsService;
         this.securityUtil = securityUtil;
     }
 
@@ -116,5 +125,37 @@ public class AnalyticsController {
             @RequestParam(defaultValue = "10") int limit) {
         Long userId = securityUtil.getCurrentUserId();
         return ResponseEntity.ok(analyticsService.getTopDescriptions(userId, month, year, Math.min(limit, 50)));
+    }
+
+    @GetMapping("/spending-forecast")
+    @Operation(summary = "Spending forecast", description = "3-month spending forecast using 6-month moving average algorithm")
+    public ResponseEntity<SpendingForecastResponse> getSpendingForecast() {
+        Long userId = securityUtil.getCurrentUserId();
+        return ResponseEntity.ok(analyticsService.getSpendingForecast(userId));
+    }
+
+    @GetMapping("/reconciliation-trends")
+    @Operation(summary = "Reconciliation trends", description = "Monthly reconciliation success and discrepancy trends")
+    public ResponseEntity<List<ReconciliationTrendResponse>> getReconciliationTrends(
+            @RequestParam(defaultValue = "6") int months) {
+        Long userId = securityUtil.getCurrentUserId();
+        return ResponseEntity.ok(operationalAnalyticsService.getReconciliationTrends(userId, months));
+    }
+
+    @GetMapping("/delivery-analytics")
+    @Operation(summary = "Delivery analytics", description = "Email and webhook delivery performance metrics")
+    public ResponseEntity<DeliveryAnalyticsResponse> getDeliveryAnalytics(
+            @RequestParam(defaultValue = "30") int days) {
+        Long userId = securityUtil.getCurrentUserId();
+        return ResponseEntity.ok(operationalAnalyticsService.getDeliveryAnalytics(userId, days));
+    }
+
+    @GetMapping("/fx-history")
+    @Operation(summary = "FX history", description = "Historical exchange rates for a currency pair")
+    public ResponseEntity<FxHistoryResponse> getFxHistory(
+            @RequestParam String from,
+            @RequestParam String to,
+            @RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(operationalAnalyticsService.getFxHistory(from, to, days));
     }
 }
