@@ -9,9 +9,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v1/recurring-transactions")
@@ -29,22 +31,27 @@ public class RecurringTransactionController {
     @PostMapping
     @Operation(summary = "Create recurring transaction")
     public ResponseEntity<RecurringTransactionResponse> create(@Valid @RequestBody RecurringTransactionRequest request) {
-        Long userId = securityUtil.getCurrentUserId();
+        Long userId = getUserId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(userId, request));
     }
 
     @GetMapping
     @Operation(summary = "List recurring transactions")
     public ResponseEntity<List<RecurringTransactionResponse>> list() {
-        Long userId = securityUtil.getCurrentUserId();
+        Long userId = getUserId();
         return ResponseEntity.ok(service.getByUser(userId));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Deactivate recurring transaction")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
-        Long userId = securityUtil.getCurrentUserId();
-        service.deactivate(userId, id);
+        Long userId = getUserId();
+        Long resolvedId = Objects.requireNonNull(id, "id");
+        service.deactivate(userId, resolvedId);
         return ResponseEntity.noContent().build();
+    }
+
+    private @NonNull Long getUserId() {
+        return Objects.requireNonNull(securityUtil.getCurrentUserId(), "userId");
     }
 }

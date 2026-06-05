@@ -34,6 +34,8 @@ class TransactionServiceTest {
     @Mock private CategoryService categoryService;
     @SuppressWarnings("unused")
     @Mock private TransactionAuditService auditService;
+    @Mock private CategorizationEventPublisher categorizationEventPublisher;
+    @Mock private RagDocumentIngestionService ragDocumentIngestionService;
 
     @InjectMocks
     private TransactionService transactionService;

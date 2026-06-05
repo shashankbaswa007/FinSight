@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -32,7 +33,6 @@ import java.util.UUID;
 public class AuditLogFilter extends OncePerRequestFilter {
 
     private static final Logger audit = LoggerFactory.getLogger("AUDIT");
-    private static final Logger piiAccess = LoggerFactory.getLogger("PII_ACCESS");
     
     private static final Set<String> SENSITIVE_ENDPOINTS = Set.of(
             "/api/auth/login", "/api/auth/register", "/api/profile/password",
@@ -43,9 +43,9 @@ public class AuditLogFilter extends OncePerRequestFilter {
     private static final String CORRELATION_ID_MDC_KEY = "correlationId";
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain chain) throws ServletException, IOException {
         
         // Generate or retrieve correlation ID
         String correlationId = request.getHeader(CORRELATION_ID_HEADER);
@@ -56,6 +56,9 @@ public class AuditLogFilter extends OncePerRequestFilter {
         // Store correlation ID in MDC for logging (available to all loggers in this thread)
         MDC.put(CORRELATION_ID_MDC_KEY, correlationId);
         
+        // Add correlation ID to response header BEFORE executing chain
+        response.setHeader(CORRELATION_ID_HEADER, correlationId);
+
         try {
             long start = System.currentTimeMillis();
             chain.doFilter(request, response);
@@ -72,9 +75,7 @@ public class AuditLogFilter extends OncePerRequestFilter {
             // Log with correlation ID
             audit.info("{} {} {} status={} duration={}ms correlationId={}{}", 
                     method, uri, maskPII(user), status, duration, correlationId, detail);
-
-            // Add correlation ID to response header
-            response.setHeader(CORRELATION_ID_HEADER, correlationId);
+            
             
         } finally {
             // Clean up MDC

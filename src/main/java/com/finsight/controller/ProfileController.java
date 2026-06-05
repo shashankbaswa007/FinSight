@@ -11,9 +11,12 @@ import com.finsight.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.lang.NonNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v1/profile")
@@ -70,10 +73,12 @@ public class ProfileController {
         return ResponseEntity.noContent().build();
     }
 
-    private User getCurrentUser() {
-        Long userId = securityUtil.getCurrentUserId();
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+    private @NonNull User getCurrentUser() {
+        Long userId = Objects.requireNonNull(securityUtil.getCurrentUserId(), "userId");
+        return Objects.requireNonNull(
+            userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId)),
+            "user");
     }
 
     private ProfileResponse mapToResponse(User user) {

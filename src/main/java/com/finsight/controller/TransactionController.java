@@ -1,7 +1,9 @@
 package com.finsight.controller;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
+import org.springframework.lang.NonNull;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +50,7 @@ public class TransactionController {
     @Operation(summary = "Create a transaction", description = "Records a new income or expense transaction")
     public ResponseEntity<TransactionResponse> createTransaction(
             @Valid @RequestBody TransactionRequest request) {
-        Long userId = securityUtil.getCurrentUserId();
+        Long userId = getUserId();
         TransactionResponse response = transactionService.createTransaction(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -56,17 +58,17 @@ public class TransactionController {
     @PutMapping("/{id}")
     @Operation(summary = "Update a transaction", description = "Updates an existing transaction")
     public ResponseEntity<TransactionResponse> updateTransaction(
-            @PathVariable Long id,
+            @PathVariable @NonNull Long id,
             @Valid @RequestBody TransactionRequest request) {
-        Long userId = securityUtil.getCurrentUserId();
+        Long userId = getUserId();
         TransactionResponse response = transactionService.updateTransaction(userId, id, request);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a transaction", description = "Deletes a transaction by ID")
-    public ResponseEntity<Void> deleteTransaction(@PathVariable Long id) {
-        Long userId = securityUtil.getCurrentUserId();
+    public ResponseEntity<Void> deleteTransaction(@PathVariable @NonNull Long id) {
+        Long userId = getUserId();
         transactionService.deleteTransaction(userId, id);
         return ResponseEntity.noContent().build();
     }
@@ -80,8 +82,15 @@ public class TransactionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long userId = securityUtil.getCurrentUserId();
-        TransactionType txType = type != null ? TransactionType.valueOf(type) : null;
+        Long userId = getUserId();
+        TransactionType txType = null;
+        if (type != null) {
+            try {
+                txType = TransactionType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new com.finsight.exception.BadRequestException("Invalid transaction type: " + type);
+            }
+        }
         int cappedSize = Math.min(size, 100);
         PagedResponse<TransactionResponse> response =
                 transactionService.getTransactions(userId, txType, categoryId, startDate, endDate, page, cappedSize);
@@ -93,8 +102,12 @@ public class TransactionController {
     public ResponseEntity<MonthlyTransactionSummary> getMonthlyTransactionSummary(
             @RequestParam int month,
             @RequestParam int year) {
-        Long userId = securityUtil.getCurrentUserId();
+        Long userId = getUserId();
         MonthlyTransactionSummary summary = transactionService.getMonthlyTransactionSummary(userId, month, year);
         return ResponseEntity.ok(summary);
+    }
+
+    private @NonNull Long getUserId() {
+        return Objects.requireNonNull(securityUtil.getCurrentUserId(), "userId");
     }
 }
