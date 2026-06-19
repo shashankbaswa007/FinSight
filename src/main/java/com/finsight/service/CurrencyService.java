@@ -1,5 +1,6 @@
 package com.finsight.service;
 
+import com.finsight.exception.ResourceNotFoundException;
 import com.finsight.model.Currency;
 import com.finsight.model.User;
 import com.finsight.model.UserWallet;
@@ -66,7 +67,7 @@ public class CurrencyService {
             .orElseThrow(() -> new RuntimeException("User not found"));
         
         Currency currency = currencyRepository.findByCode(currencyCode)
-            .orElseThrow(() -> new RuntimeException("Currency not found: " + currencyCode));
+            .orElseThrow(() -> new ResourceNotFoundException("Currency not found: " + currencyCode));
         
         Optional<UserWallet> existing = walletRepository.findByUserIdAndCurrencyId(userId, currency.getId());
         if (existing.isPresent()) {

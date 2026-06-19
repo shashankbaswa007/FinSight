@@ -8,6 +8,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.util.List;
@@ -33,6 +34,7 @@ public class RagDocumentIngestionService {
      * In a production system, this would be incremental (event-driven).
      */
     @Async("aiTaskExecutor")
+    @Transactional(readOnly = true)
     public void ingestUserData(Long userId) {
         // Fetch recent transactions
         List<Transaction> recentTransactions = transactionRepository.findTop100ByUserIdOrderByDateDesc(userId);

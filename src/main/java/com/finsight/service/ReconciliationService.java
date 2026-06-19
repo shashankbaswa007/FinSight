@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import com.finsight.exception.ResourceNotFoundException;
 import org.springframework.lang.NonNull;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -211,7 +212,7 @@ public class ReconciliationService {
     @Transactional(readOnly = true)
     public ReconciliationBatchResponse getReconciliationBatch(@NonNull Long userId, @NonNull Long batchId) {
         ReconciliationBatch batch = reconciliationBatchRepository.findById(batchId)
-            .orElseThrow(() -> new RuntimeException("Batch not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
         
         if (!batch.getUser().getId().equals(userId)) {
             throw new RuntimeException("Unauthorized");
@@ -235,7 +236,7 @@ public class ReconciliationService {
     @Transactional(readOnly = true)
     public List<TransactionMatchResponse> getTransactionMatches(@NonNull Long userId, @NonNull Long batchId) {
         ReconciliationBatch batch = reconciliationBatchRepository.findById(batchId)
-            .orElseThrow(() -> new RuntimeException("Batch not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
         
         if (!batch.getUser().getId().equals(userId)) {
             throw new RuntimeException("Unauthorized");
@@ -253,7 +254,7 @@ public class ReconciliationService {
     @Transactional(readOnly = true)
     public String exportBatchCsv(@NonNull Long userId, @NonNull Long batchId) {
         ReconciliationBatch batch = reconciliationBatchRepository.findById(batchId)
-            .orElseThrow(() -> new RuntimeException("Batch not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
 
         if (!batch.getUser().getId().equals(userId)) {
             throw new RuntimeException("Unauthorized");

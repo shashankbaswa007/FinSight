@@ -12,7 +12,7 @@ import java.util.List;
  * Each user can have many transactions and budgets.
  */
 @Entity
-@Table(name = "users")
+@Table(name = "app_users")
 public class User {
 
     @Id

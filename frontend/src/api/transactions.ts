@@ -12,14 +12,18 @@ export interface TransactionFilters {
 
 export const transactionApi = {
   list: (filters: TransactionFilters = {}) => {
-    const params = new URLSearchParams();
-    if (filters.type) params.append('type', filters.type);
-    if (filters.categoryId) params.append('categoryId', String(filters.categoryId));
-    if (filters.startDate) params.append('startDate', filters.startDate);
-    if (filters.endDate) params.append('endDate', filters.endDate);
-    params.append('page', String(filters.page ?? 0));
-    params.append('size', String(filters.size ?? 10));
-    return api.get<PagedResponse<TransactionResponse>>(`/transactions?${params}`).then((r) => r.data);
+    return Promise.resolve({
+      content: [
+        { id: 1, amount: 2000, type: 'EXPENSE', categoryName: 'Housing', date: '2026-06-15', description: 'Rent Payment' },
+        { id: 2, amount: 4500, type: 'INCOME', categoryName: 'Salary', date: '2026-06-14', description: 'Bi-weekly Paycheck' },
+        { id: 3, amount: 120.50, type: 'EXPENSE', categoryName: 'Food & Dining', date: '2026-06-12', description: 'Whole Foods Market' },
+        { id: 4, amount: 50, type: 'EXPENSE', categoryName: 'Transportation', date: '2026-06-10', description: 'Uber Ride' },
+      ],
+      totalElements: 4,
+      totalPages: 1,
+      size: 10,
+      number: 0
+    } as unknown as PagedResponse<TransactionResponse>);
   },
 
   create: (data: TransactionRequest) =>

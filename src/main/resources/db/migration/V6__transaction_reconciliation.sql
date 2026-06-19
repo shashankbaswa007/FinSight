@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS reconciliation_batches (
     discrepancy_amount DECIMAL(15,2) NOT NULL DEFAULT 0.00,
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_reconciliation_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_reconciliation_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     INDEX idx_reconciliation_user_date (user_id, batch_date),
     INDEX idx_reconciliation_status (status),
     UNIQUE KEY uk_reconciliation_user_date (user_id, batch_date)
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS external_transactions (
     description VARCHAR(500),
     transaction_date DATE NOT NULL,
     imported_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_external_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_external_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     INDEX idx_external_user_date (user_id, transaction_date),
     INDEX idx_external_source (source),
     UNIQUE KEY uk_external_id (external_id, source, user_id)

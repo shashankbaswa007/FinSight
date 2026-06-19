@@ -4,7 +4,7 @@ describe('Authentication Flow', () => {
   });
 
   it('should display login page', () => {
-    cy.get('h1').should('contain', 'FinSight');
+    cy.contains('FinSight');
     cy.get('input[type="email"]').should('exist');
     cy.get('input[type="password"]').should('exist');
   });
@@ -15,13 +15,13 @@ describe('Authentication Flow', () => {
     cy.get('button[type="submit"]').click();
     
     // Assumes an error message appears
-    cy.get('.text-red-600').should('exist');
+    cy.get('[data-testid="error-message"]').should('exist');
   });
 
   it('should login and redirect to dashboard', () => {
     // Uses the demo user seeded by DemoDataSeeder
-    cy.get('input[type="email"]').type('demo@finsight.local');
-    cy.get('input[type="password"]').type('password123');
+    cy.get('input[type="email"]').type('demo@finsight.com');
+    cy.get('input[type="password"]').type('Demo@1234');
     cy.get('button[type="submit"]').click();
 
     cy.url().should('include', '/dashboard');

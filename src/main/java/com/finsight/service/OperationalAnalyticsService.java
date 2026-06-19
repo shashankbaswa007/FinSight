@@ -5,6 +5,7 @@ import com.finsight.dto.DeliveryChannelMetricsResponse;
 import com.finsight.dto.FxHistoryResponse;
 import com.finsight.dto.FxRatePointResponse;
 import com.finsight.dto.ReconciliationTrendResponse;
+import com.finsight.exception.ResourceNotFoundException;
 import com.finsight.model.Currency;
 import com.finsight.model.ExchangeRate;
 import com.finsight.model.NotificationDelivery;
@@ -138,9 +139,9 @@ public class OperationalAnalyticsService {
         }
 
         Currency fromCurrency = currencyRepository.findByCode(from)
-                .orElseThrow(() -> new RuntimeException("Currency not found: " + from));
+                .orElseThrow(() -> new ResourceNotFoundException("Currency not found: " + from));
         Currency toCurrency = currencyRepository.findByCode(to)
-                .orElseThrow(() -> new RuntimeException("Currency not found: " + to));
+                .orElseThrow(() -> new ResourceNotFoundException("Currency not found: " + to));
 
         List<ExchangeRate> rates = exchangeRateRepository.findHistory(
                 fromCurrency.getId(),

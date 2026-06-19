@@ -2,7 +2,7 @@
 -- V1: Initial schema for FinSight
 -- ═══════════════════════════════════════════════════════════════
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS app_users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     description VARCHAR(500),
     date DATE NOT NULL,
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_transaction_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_transaction_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     CONSTRAINT fk_transaction_category FOREIGN KEY (category_id) REFERENCES categories(id),
     INDEX idx_transaction_user_date (user_id, date),
     INDEX idx_transaction_user_category (user_id, category_id)
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS budgets (
     monthly_limit DECIMAL(15,2) NOT NULL,
     budget_month INT NOT NULL,
     budget_year INT NOT NULL,
-    CONSTRAINT fk_budget_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_budget_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     CONSTRAINT fk_budget_category FOREIGN KEY (category_id) REFERENCES categories(id)
 ) ENGINE=InnoDB;
 
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS recurring_transactions (
     end_date DATE,
     next_occurrence DATE NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT fk_recurring_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_recurring_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     CONSTRAINT fk_recurring_category FOREIGN KEY (category_id) REFERENCES categories(id)
 ) ENGINE=InnoDB;
 

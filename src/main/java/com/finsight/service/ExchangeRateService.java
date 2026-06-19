@@ -1,5 +1,6 @@
 package com.finsight.service;
 
+import com.finsight.exception.ResourceNotFoundException;
 import com.finsight.model.Currency;
 import com.finsight.model.ExchangeRate;
 import com.finsight.repository.CurrencyRepository;
@@ -44,10 +45,10 @@ public class ExchangeRateService {
         }
         
         Currency fromCurr = currencyRepository.findByCode(fromCode)
-            .orElseThrow(() -> new RuntimeException("Currency not found: " + fromCode));
+            .orElseThrow(() -> new ResourceNotFoundException("Currency not found: " + fromCode));
         
         Currency toCurr = currencyRepository.findByCode(toCurrency)
-            .orElseThrow(() -> new RuntimeException("Currency not found: " + toCurrency));
+            .orElseThrow(() -> new ResourceNotFoundException("Currency not found: " + toCurrency));
         
         String cacheKey = fromCode + "-" + toCurrency + "-" + effectiveDate;
         if (rateCache.containsKey(cacheKey)) {
@@ -82,10 +83,10 @@ public class ExchangeRateService {
     public ExchangeRate storeExchangeRate(String fromCode, String toCode, BigDecimal rate, 
                                         String source, LocalDate effectiveDate) {
         Currency fromCurr = currencyRepository.findByCode(fromCode)
-            .orElseThrow(() -> new RuntimeException("Currency not found: " + fromCode));
+            .orElseThrow(() -> new ResourceNotFoundException("Currency not found: " + fromCode));
         
         Currency toCurr = currencyRepository.findByCode(toCode)
-            .orElseThrow(() -> new RuntimeException("Currency not found: " + toCode));
+            .orElseThrow(() -> new ResourceNotFoundException("Currency not found: " + toCode));
         
         // Check for reverse rate
         Optional<ExchangeRate> existing = exchangeRateRepository.findLatestRate(

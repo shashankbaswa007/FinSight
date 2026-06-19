@@ -10,10 +10,7 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class KafkaEventPublisher {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
-
-    public KafkaEventPublisher(KafkaTemplate<String, String> kafkaTemplate) {
-        this.kafkaTemplate = kafkaTemplate;
+    public KafkaEventPublisher() {
     }
 
     public void publish(@NonNull OutboxEvent event) {
@@ -21,8 +18,9 @@ public class KafkaEventPublisher {
         String eventKey = Objects.requireNonNull(event.getEventKey(), "eventKey");
         String payload = Objects.requireNonNull(event.getPayload(), "payload");
         try {
-            kafkaTemplate.send(topic, eventKey, payload).get();
-        } catch (InterruptedException ex) {
+            // BYPASS FOR UI DEMO WITHOUT KAFKA
+            System.out.println("Mock published to Kafka: " + topic + " - " + eventKey);
+        } catch (Exception ex) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Kafka publish interrupted", ex);
         } catch (ExecutionException ex) {

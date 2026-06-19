@@ -25,6 +25,7 @@ import com.finsight.repository.CategoryRepository;
 import com.finsight.repository.RecurringTransactionRepository;
 import com.finsight.repository.TransactionRepository;
 import com.finsight.repository.UserRepository;
+import com.finsight.service.RagDocumentIngestionService;
 
 /**
  * Seeds demo data when the "demo" profile is active.
@@ -46,6 +47,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final RecurringTransactionRepository recurringTransactionRepository;
     private final PasswordEncoder passwordEncoder;
     private final jakarta.persistence.EntityManager em;
+    private final RagDocumentIngestionService ragDocumentIngestionService;
 
     public DemoDataSeeder(UserRepository userRepository,
                           CategoryRepository categoryRepository,
@@ -53,7 +55,8 @@ public class DemoDataSeeder implements CommandLineRunner {
                           BudgetRepository budgetRepository,
                           RecurringTransactionRepository recurringTransactionRepository,
                           PasswordEncoder passwordEncoder,
-                          jakarta.persistence.EntityManager em) {
+                          jakarta.persistence.EntityManager em,
+                          RagDocumentIngestionService ragDocumentIngestionService) {
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.transactionRepository = transactionRepository;
@@ -61,6 +64,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         this.recurringTransactionRepository = recurringTransactionRepository;
         this.passwordEncoder = passwordEncoder;
         this.em = em;
+        this.ragDocumentIngestionService = ragDocumentIngestionService;
     }
 
     @Override
@@ -259,6 +263,9 @@ public class DemoDataSeeder implements CommandLineRunner {
         em.createNativeQuery("INSERT INTO notifications (user_id, type, title, message, is_read, created_at) VALUES (?, 'SYSTEM', 'Welcome to FinSight!', 'We have analyzed your past 12 months of spending. Visit the Analytics page to see your trends.', false, NOW())")
           .setParameter(1, demo.getId())
           .executeUpdate();
+
+        log.info("Indexing demo transactions for AI Chatbot...");
+        ragDocumentIngestionService.ingestUserData(demo.getId());
 
         log.info("Demo data seeding complete! Login with demo@finsight.com / Demo@1234");
     }
