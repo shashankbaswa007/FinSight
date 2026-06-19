@@ -27,6 +27,20 @@ export default function LoginPage() {
     }
   };
 
+  const handleDemoLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const data = await authApi.login({ email: 'demo@finsight.com', password: 'Demo@1234' });
+      login(data);
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Invalid email or password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       {/* Left panel – branding */}
@@ -68,7 +82,7 @@ export default function LoginPage() {
           <p className="text-gray-500 dark:text-slate-400 mb-8">Sign in to your account to continue</p>
 
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm animate-slide-down">
+            <div data-testid="error-message" className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm animate-slide-down">
               {error}
             </div>
           )}
@@ -105,6 +119,24 @@ export default function LoginPage() {
             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+
+            <div className="relative my-4 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200 dark:border-slate-800"></div>
+              </div>
+              <span className="relative bg-white dark:bg-slate-900 px-3 text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wider font-semibold">
+                Or demo access
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 dark:border-slate-800 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 shadow-sm transition-all duration-200 disabled:opacity-50"
+            >
+              Sign in with Demo Account
             </button>
           </form>
 

@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
     alert_frequency ENUM('REAL_TIME', 'DAILY', 'WEEKLY') NOT NULL DEFAULT 'REAL_TIME',
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_notif_pref_user FOREIGN KEY (user_id) REFERENCES users(id)
+    CONSTRAINT fk_notif_pref_user FOREIGN KEY (user_id) REFERENCES app_users(id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS notifications (
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     read_at DATETIME(6),
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     INDEX idx_notification_user_read (user_id, is_read),
     INDEX idx_notification_created (created_at)
 ) ENGINE=InnoDB;
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS webhooks (
     retry_count INT NOT NULL DEFAULT 3,
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_webhook_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_webhook_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     INDEX idx_webhook_user (user_id)
 ) ENGINE=InnoDB;
 
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS budget_alert_events (
     current_spending DECIMAL(15,2) NOT NULL,
     percentage_used INT NOT NULL,
     triggered_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_budget_alert_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_budget_alert_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     CONSTRAINT fk_budget_alert_budget FOREIGN KEY (budget_id) REFERENCES budgets(id),
     CONSTRAINT fk_budget_alert_category FOREIGN KEY (category_id) REFERENCES categories(id),
     INDEX idx_budget_alert_user_date (user_id, triggered_at)

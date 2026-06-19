@@ -35,8 +35,9 @@ api.interceptors.response.use(
       sessionStorage.setItem(CORRELATION_ID_KEY, correlationId);
     }
 
-    // Handle 401 responses (expired token)
-    if (error.response?.status === 401) {
+    // Handle 401 responses (expired token), but avoid redirecting if it's an auth request
+    const isAuthRequest = error.config?.url?.includes('/auth/');
+    if (error.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

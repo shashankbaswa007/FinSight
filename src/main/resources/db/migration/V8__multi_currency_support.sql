@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS user_wallets (
     wallet_name VARCHAR(100),
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_wallet_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_wallet_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     CONSTRAINT fk_wallet_currency FOREIGN KEY (currency_id) REFERENCES currencies(id),
     INDEX idx_wallet_user (user_id),
     UNIQUE KEY uk_wallet_user_currency (user_id, currency_id)
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS currency_conversion_logs (
     rate_used DECIMAL(18,8) NOT NULL,
     rate_source VARCHAR(100),
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_conversion_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_conversion_user FOREIGN KEY (user_id) REFERENCES app_users(id),
     CONSTRAINT fk_conversion_transaction FOREIGN KEY (transaction_id) REFERENCES transactions(id),
     CONSTRAINT fk_conversion_from FOREIGN KEY (from_currency_id) REFERENCES currencies(id),
     CONSTRAINT fk_conversion_to FOREIGN KEY (to_currency_id) REFERENCES currencies(id),

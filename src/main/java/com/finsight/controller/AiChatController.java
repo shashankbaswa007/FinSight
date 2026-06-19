@@ -53,4 +53,32 @@ public class AiChatController {
         String aiResponse = aiService.getFinancialAdvice(userId, userMessage, contextData);
         return ResponseEntity.ok(Map.of("reply", aiResponse));
     }
+
+    @PostMapping(value = "/chat/stream", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "Ask the AI Financial Advisor a question (Streaming)")
+    public reactor.core.publisher.Flux<String> chatStream(@RequestBody Map<String, String> request) {
+        Long userId = securityUtil.getCurrentUserId();
+        String userMessage = request.get("message");
+        
+        if (userMessage == null || userMessage.trim().isEmpty()) {
+            return reactor.core.publisher.Flux.error(new IllegalArgumentException("Message cannot be empty"));
+        }
+
+        // Fetch recent context for the AI
+        int currentMonth = java.time.LocalDate.now().getMonthValue();
+        int currentYear = java.time.LocalDate.now().getYear();
+        
+        // Use the analytics service to get a summary to feed to the LLM
+        String contextData = "";
+        try {
+            var summary = analyticsService.getMonthlySummary(userId, currentMonth, currentYear);
+            contextData = String.format("Current Month (%02d/%d) Status:\nTotal Income: %s\nTotal Expenses: %s\nNet Savings: %s",
+                    currentMonth, currentYear, 
+                    summary.getTotalIncome(), summary.getTotalExpense(), summary.getNetSavings());
+        } catch (Exception e) {
+            contextData = "No recent data available.";
+        }
+
+        return aiService.getFinancialAdviceStream(userId, userMessage, contextData);
+    }
 }

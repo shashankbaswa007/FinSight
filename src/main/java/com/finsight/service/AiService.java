@@ -21,12 +21,12 @@ public class AiService {
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
     private final ChatClient chatClient;
-    private final VectorStore vectorStore;
+    private final UserVectorStoreManager userVectorStoreManager;
     private final CategoryRepository categoryRepository;
 
-    public AiService(ChatClient.Builder chatClientBuilder, VectorStore vectorStore, CategoryRepository categoryRepository) {
+    public AiService(ChatClient.Builder chatClientBuilder, UserVectorStoreManager userVectorStoreManager, CategoryRepository categoryRepository) {
         this.chatClient = chatClientBuilder.build();
-        this.vectorStore = vectorStore;
+        this.userVectorStoreManager = userVectorStoreManager;
         this.categoryRepository = categoryRepository;
     }
 
@@ -107,6 +107,7 @@ public class AiService {
     @CircuitBreaker(name = "ollamaAi", fallbackMethod = "fallbackFinancialAdvice")
     public String getFinancialAdvice(Long userId, String userMessage, String contextData) {
         // RAG Retrieval Phase
+        VectorStore vectorStore = userVectorStoreManager.getVectorStore(userId);
         List<Document> similarDocuments = vectorStore.similaritySearch(
             SearchRequest.builder()
                 .query(userMessage)
@@ -119,9 +120,15 @@ public class AiService {
                 .map(Document::getText)
                 .collect(Collectors.joining("\n- ", "- ", ""));
 
-        String systemPrompt = "You are FinSight's AI Financial Advisor. Be concise, helpful, and professional. " +
-                "You have access to the user's current month summary and historical transaction context retrieved from their database. " +
-                "Answer the user's questions strictly based on the provided context. If the context doesn't contain the answer, say you don't know.\n\n" +
+        String systemPrompt = "You are FinSight's AI Financial Advisor. FinSight is a modern personal finance management application that allows users to track their budgets, record transactions, visualize analytics, and reconcile accounts. Be concise, helpful, and professional.\n" +
+                "You have access to the user's current month summary and historical transaction context retrieved from their database.\n" +
+                "Answer the user's questions based on the provided context or your knowledge about FinSight's features. If the context doesn't contain the answer to a specific transaction query, say you don't know.\n" +
+                "CRITICAL RULES:\n" +
+                "1. ONLY answer the user's immediate question. DO NOT simulate a conversation. DO NOT write fake user follow-up questions.\n" +
+                "2. Keep your answers UNDER 3 SENTENCES unless specifically asked for a detailed guide. Be extremely concise.\n" +
+                "3. Always format your responses using Markdown. You MUST use **bullet points** when listing more than 2 items, features, or steps.\n" +
+                "4. Use **bold text** to highlight key terms, feature names, or important concepts.\n" +
+                "5. Use paragraph breaks heavily—never output a paragraph longer than two sentences.\n\n" +
                 "=== CURRENT MONTH SUMMARY ===\n" + contextData + "\n\n" +
                 "=== HISTORICAL TRANSACTION CONTEXT ===\n" + retrievedContext;
 
@@ -135,5 +142,59 @@ public class AiService {
     public String fallbackFinancialAdvice(Long userId, String userMessage, String contextData, Throwable t) {
         return "I'm having trouble connecting to my AI brain (Ollama) right now. Please make sure the local Ollama service is running. " +
                "(Error: " + t.getMessage() + ")";
+    }
+
+    @CircuitBreaker(name = "ollamaAi", fallbackMethod = "fallbackFinancialAdviceStream")
+    public reactor.core.publisher.Flux<String> getFinancialAdviceStream(Long userId, String userMessage, String contextData) {
+        // RAG Retrieval Phase
+        VectorStore vectorStore = userVectorStoreManager.getVectorStore(userId);
+        List<Document> similarDocuments = vectorStore.similaritySearch(
+            SearchRequest.builder()
+                .query(userMessage)
+                .topK(5)
+                .filterExpression("userId == '" + userId + "'")
+                .build()
+        );
+        
+        String retrievedContext = similarDocuments.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n- ", "- ", ""));
+
+        String systemPrompt = "You are FinSight's AI Financial Advisor. FinSight is a modern personal finance management application that allows users to track their budgets, record transactions, visualize analytics, and reconcile accounts. Be concise, helpful, and professional.\n" +
+                "You have access to the user's current month summary and historical transaction context retrieved from their database.\n" +
+                "Answer the user's questions based on the provided context or your knowledge about FinSight's features. If the context doesn't contain the answer to a specific transaction query, say you don't know.\n" +
+                "CRITICAL RULES:\n" +
+                "1. ONLY answer the user's immediate question. DO NOT simulate a conversation. DO NOT write fake user follow-up questions.\n" +
+                "2. Keep your answers UNDER 3 SENTENCES unless specifically asked for a detailed guide. Be extremely concise.\n" +
+                "3. Always format your responses using Markdown. You MUST use **bullet points** when listing more than 2 items, features, or steps.\n" +
+                "4. Use **bold text** to highlight key terms, feature names, or important concepts.\n" +
+                "5. Use paragraph breaks heavily—never output a paragraph longer than two sentences.\n\n" +
+                "=== CURRENT MONTH SUMMARY ===\n" + contextData + "\n\n" +
+                "=== HISTORICAL TRANSACTION CONTEXT ===\n" + retrievedContext;
+
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+        return chatClient.prompt()
+                .system(systemPrompt)
+                .user(userMessage)
+                .stream()
+                .content()
+                .map(content -> {
+                    try {
+                        return mapper.writeValueAsString(java.util.Map.of("text", content));
+                    } catch (Exception e) {
+                        return "{\"text\":\"\"}";
+                    }
+                });
+    }
+
+    public reactor.core.publisher.Flux<String> fallbackFinancialAdviceStream(Long userId, String userMessage, String contextData, Throwable t) {
+        String msg = "I'm having trouble connecting to my AI brain (Ollama) right now. Please make sure the local Ollama service is running. " +
+               "(Error: " + t.getMessage() + ")";
+        try {
+            return reactor.core.publisher.Flux.just(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(java.util.Map.of("text", msg)));
+        } catch (Exception e) {
+            return reactor.core.publisher.Flux.just("{\"text\":\"Error connecting\"}");
+        }
     }
 }
