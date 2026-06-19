@@ -3,10 +3,10 @@ import type { CategoryRequest, CategoryResponse } from '../types';
 
 export const categoryApi = {
   list: () => Promise.resolve([
-    { id: 1, name: 'Housing', type: 'EXPENSE', color: '#f43f5e' },
-    { id: 2, name: 'Food & Dining', type: 'EXPENSE', color: '#10b981' },
-    { id: 3, name: 'Transportation', type: 'EXPENSE', color: '#06b6d4' },
-    { id: 4, name: 'Salary', type: 'INCOME', color: '#14b8a6' }
+    { id: 1, name: 'Housing', type: 'EXPENSE' },
+    { id: 2, name: 'Food & Dining', type: 'EXPENSE' },
+    { id: 3, name: 'Transportation', type: 'EXPENSE' },
+    { id: 4, name: 'Salary', type: 'INCOME' }
   ] as CategoryResponse[]),
 
   create: (data: CategoryRequest) =>

@@ -34,16 +34,18 @@ export default function DashboardPage() {
     try {
       // Mock Data to bypass backend failures
       setSummary({
+        month,
+        year,
         totalIncome: 12450.00,
         totalExpense: 4230.50,
         netSavings: 8219.50,
         incomeExpenseRatio: 2.94
       });
       setTopCats([
-        { categoryName: 'Housing', totalAmount: 2000 },
-        { categoryName: 'Food & Dining', totalAmount: 850 },
-        { categoryName: 'Transportation', totalAmount: 400 },
-        { categoryName: 'Entertainment', totalAmount: 300 }
+        { categoryName: 'Housing', totalAmount: 2000, transactionCount: 15 },
+        { categoryName: 'Food & Dining', totalAmount: 850, transactionCount: 10 },
+        { categoryName: 'Transportation', totalAmount: 400, transactionCount: 5 },
+        { categoryName: 'Entertainment', totalAmount: 300, transactionCount: 3 }
       ]);
       setTrends([
         { year, month: month - 2, totalIncome: 11000, totalSpending: 4100 },
@@ -57,10 +59,14 @@ export default function DashboardPage() {
         { id: 4, amount: 50, type: 'EXPENSE', categoryName: 'Transportation', date: '2026-06-10', description: 'Uber Ride' },
       ] as any[]);
       setMom({
-        currentMonthIncome: 12450,
-        currentMonthExpense: 4230,
-        previousMonthIncome: 11500,
-        previousMonthExpense: 3900,
+        currentMonth: month,
+        currentYear: year,
+        currentIncome: 12450,
+        currentExpense: 4230,
+        previousIncome: 11500,
+        previousExpense: 3900,
+        incomeChange: 950,
+        expenseChange: 330,
         incomeChangePercent: 8.26,
         expenseChangePercent: 8.46
       });
