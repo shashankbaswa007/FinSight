@@ -17,14 +17,7 @@ public class KafkaEventPublisher {
         String topic = Objects.requireNonNull(event.getTopic(), "topic");
         String eventKey = Objects.requireNonNull(event.getEventKey(), "eventKey");
         String payload = Objects.requireNonNull(event.getPayload(), "payload");
-        try {
-            // BYPASS FOR UI DEMO WITHOUT KAFKA
-            System.out.println("Mock published to Kafka: " + topic + " - " + eventKey);
-        } catch (Exception ex) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Kafka publish interrupted", ex);
-        } catch (ExecutionException ex) {
-            throw new RuntimeException("Kafka publish failed", ex.getCause());
-        }
+        // BYPASS FOR UI DEMO WITHOUT KAFKA
+        System.out.println("Mock published to Kafka: " + topic + " - " + eventKey);
     }
 }

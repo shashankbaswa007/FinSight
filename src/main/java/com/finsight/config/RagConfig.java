@@ -11,20 +11,5 @@ import java.io.File;
 @Configuration
 public class RagConfig {
 
-    @Value("${spring.ai.vectorstore.simple.path:vector-store.json}")
-    private String vectorStorePath;
 
-    @Bean
-    public VectorStore vectorStore(EmbeddingModel embeddingModel) {
-        SimpleVectorStore simpleVectorStore = SimpleVectorStore.builder(embeddingModel).build();
-        File file = new File(vectorStorePath);
-        if (file.exists() && file.length() > 0) {
-            try {
-                simpleVectorStore.load(file);
-            } catch (Exception e) {
-                // Ignore load error for empty/corrupted file
-            }
-        }
-        return simpleVectorStore;
-    }
 }

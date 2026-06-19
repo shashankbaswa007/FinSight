@@ -21,12 +21,12 @@ public class AiService {
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
     private final ChatClient chatClient;
-    private final VectorStore vectorStore;
+    private final UserVectorStoreManager userVectorStoreManager;
     private final CategoryRepository categoryRepository;
 
-    public AiService(ChatClient.Builder chatClientBuilder, VectorStore vectorStore, CategoryRepository categoryRepository) {
+    public AiService(ChatClient.Builder chatClientBuilder, UserVectorStoreManager userVectorStoreManager, CategoryRepository categoryRepository) {
         this.chatClient = chatClientBuilder.build();
-        this.vectorStore = vectorStore;
+        this.userVectorStoreManager = userVectorStoreManager;
         this.categoryRepository = categoryRepository;
     }
 
@@ -107,6 +107,7 @@ public class AiService {
     @CircuitBreaker(name = "ollamaAi", fallbackMethod = "fallbackFinancialAdvice")
     public String getFinancialAdvice(Long userId, String userMessage, String contextData) {
         // RAG Retrieval Phase
+        VectorStore vectorStore = userVectorStoreManager.getVectorStore(userId);
         List<Document> similarDocuments = vectorStore.similaritySearch(
             SearchRequest.builder()
                 .query(userMessage)
@@ -146,6 +147,7 @@ public class AiService {
     @CircuitBreaker(name = "ollamaAi", fallbackMethod = "fallbackFinancialAdviceStream")
     public reactor.core.publisher.Flux<String> getFinancialAdviceStream(Long userId, String userMessage, String contextData) {
         // RAG Retrieval Phase
+        VectorStore vectorStore = userVectorStoreManager.getVectorStore(userId);
         List<Document> similarDocuments = vectorStore.similaritySearch(
             SearchRequest.builder()
                 .query(userMessage)
