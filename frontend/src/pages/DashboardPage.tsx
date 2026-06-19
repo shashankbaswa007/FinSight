@@ -212,16 +212,17 @@ export default function DashboardPage() {
           {pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value" label={{ fill: '#f8fafc', fontSize: 12 }}>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value" label={{ fill: '#ffffff', fontSize: 12, fontWeight: 500 }}>
                   {pieData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
                 <Legend
-                  formatter={(value) => <span className="text-xs text-gray-600 dark:text-slate-400">{value}</span>}
+                  formatter={(value) => <span className="text-xs font-medium text-white">{value}</span>}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc' }}
+                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#ffffff' }}
+                  itemStyle={{ color: '#ffffff' }}
                   formatter={(value: number) => formatCurrency(value)}
                 />
               </PieChart>

@@ -330,7 +330,7 @@ export default function AnalyticsPage() {
             <>
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={3} dataKey="value" label={{ fill: '#f8fafc', fontSize: 12 }}>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={3} dataKey="value">
                     {pieData.map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
