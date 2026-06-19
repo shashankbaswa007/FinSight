@@ -159,26 +159,26 @@ public class DemoDataSeeder implements CommandLineRunner {
                     bd(1299), monthStart.withDayOfMonth(9));
 
             // Food
-            String[] foodDescs = {"Swiggy Order", "Grocery Store", "Zomato Delivery", "Restaurant Dinner", "Coffee Shop", "Supermarket"};
-            for (int d = 2; d <= daysInMonth; d += 2 + rng.nextInt(2)) {
+            String[] foodDescs = {"Swiggy Order", "Grocery Store", "Zomato Delivery", "Restaurant Dinner", "Coffee Shop", "Supermarket", "Bakery", "Street Food"};
+            for (int d = 1; d <= daysInMonth; d += 1 + rng.nextInt(2)) {
                 txCount += addTx(demo, food, foodDescs[rng.nextInt(foodDescs.length)], "EXPENSE",
                         bd((200 + rng.nextInt(1800)) * inflationFactor),
                         monthStart.withDayOfMonth(Math.min(d, daysInMonth)));
             }
 
             // Transport
-            String[] transportDescs = {"Uber Ride", "Ola Auto", "Metro Card Recharge", "Petrol Fill-up"};
-            for (int d = 3; d <= daysInMonth; d += 4 + rng.nextInt(3)) {
+            String[] transportDescs = {"Uber Ride", "Ola Auto", "Metro Card Recharge", "Petrol Fill-up", "Train Ticket", "Bus Pass"};
+            for (int d = 1; d <= daysInMonth; d += 2 + rng.nextInt(3)) {
                 txCount += addTx(demo, transport, transportDescs[rng.nextInt(transportDescs.length)], "EXPENSE",
                         bd((100 + rng.nextInt(900)) * inflationFactor),
                         monthStart.withDayOfMonth(Math.min(d, daysInMonth)));
             }
 
             // Shopping
-            String[] shopDescs = {"Amazon Purchase", "Flipkart Order", "Myntra Fashion", "Electronics Store"};
-            int shopCount = 2 + rng.nextInt(3);
+            String[] shopDescs = {"Amazon Purchase", "Flipkart Order", "Myntra Fashion", "Electronics Store", "Mall Shopping", "Blinkit Grocery"};
+            int shopCount = 5 + rng.nextInt(5);
             for (int i = 0; i < shopCount; i++) {
-                int day = 5 + rng.nextInt(daysInMonth - 5);
+                int day = 2 + rng.nextInt(daysInMonth - 2);
                 txCount += addTx(demo, shopping, shopDescs[rng.nextInt(shopDescs.length)], "EXPENSE",
                         bd((500 + rng.nextInt(4000)) * inflationFactor),
                         monthStart.withDayOfMonth(day));
@@ -191,12 +191,12 @@ public class DemoDataSeeder implements CommandLineRunner {
             }
 
             // Entertainment
-            String[] entDescs = {"Netflix Subscription", "Movie Tickets", "Spotify Premium", "Gaming Purchase"};
-            int entCount = 1 + rng.nextInt(3);
+            String[] entDescs = {"Netflix Subscription", "Movie Tickets", "Spotify Premium", "Gaming Purchase", "Concert Tickets", "Theme Park"};
+            int entCount = 3 + rng.nextInt(4);
             for (int i = 0; i < entCount; i++) {
-                int day = 10 + rng.nextInt(Math.max(1, daysInMonth - 15));
+                int day = 5 + rng.nextInt(Math.max(1, daysInMonth - 5));
                 txCount += addTx(demo, entertainment, entDescs[rng.nextInt(entDescs.length)], "EXPENSE",
-                        bd(200 + rng.nextInt(2000)),
+                        bd(200 + rng.nextInt(3000)),
                         monthStart.withDayOfMonth(day));
             }
 
