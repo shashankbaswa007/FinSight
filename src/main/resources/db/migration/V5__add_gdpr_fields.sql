@@ -85,7 +85,7 @@ SELECT
     u.email,
     u.deletion_requested_at,
     u.hard_delete_scheduled_at,
-    DATEDIFF(DAY, NOW(), u.hard_delete_scheduled_at) AS days_until_hard_delete,
+    DATEDIFF(u.hard_delete_scheduled_at, NOW()) AS days_until_hard_delete,
     CASE 
         WHEN u.hard_delete_scheduled_at <= NOW() THEN 'READY_FOR_HARD_DELETE'
         WHEN u.hard_delete_scheduled_at IS NOT NULL THEN 'SCHEDULED_FOR_DELETION'
