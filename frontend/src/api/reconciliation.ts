@@ -92,41 +92,8 @@ export const reconciliationApi = {
   getBatch: (batchId: number) =>
     api.get<ReconciliationBatchResponse>(`/reconciliation/batches/${batchId}`).then((r) => r.data),
 
-  listBatches: async (filters: ReconciliationBatchFilters = {}): Promise<PageResponse<ReconciliationBatchResponse>> => {
-    return normalizePage({
-      content: [
-        {
-          id: 1,
-          batchDate: '2026-06-15',
-          status: 'COMPLETED',
-          totalTransactions: 150,
-          matchedTransactions: 145,
-          unmatchedTransactions: 5,
-          discrepancyAmount: 120.50,
-          matchPercentage: 96.6,
-          createdAt: '2026-06-16T10:00:00Z',
-          updatedAt: '2026-06-16T10:30:00Z'
-        },
-        {
-          id: 2,
-          batchDate: '2026-06-01',
-          status: 'COMPLETED',
-          totalTransactions: 200,
-          matchedTransactions: 200,
-          unmatchedTransactions: 0,
-          discrepancyAmount: 0,
-          matchPercentage: 100,
-          createdAt: '2026-06-02T10:00:00Z',
-          updatedAt: '2026-06-02T10:30:00Z'
-        }
-      ],
-      totalElements: 2,
-      totalPages: 1,
-      size: filters.size ?? 10,
-      number: filters.page ?? 0,
-      last: true
-    });
-  },
+  listBatches: (filters: ReconciliationBatchFilters = {}) =>
+    api.get<PageResponse<ReconciliationBatchResponse>>('/reconciliation/batches', { params: filters }).then((r) => normalizePage(r.data)),
 
   getMatches: (batchId: number): Promise<TransactionMatchResponse[]> =>
     api.get<TransactionMatchResponse[]>(`/reconciliation/batches/${batchId}/matches`).then((r) => r.data),
