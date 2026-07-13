@@ -14,7 +14,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 
-const COLORS = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
+const COLORS = ['#facc15', '#f472b6', '#4ade80', '#3b82f6', '#f87171', '#a855f7', '#06b6d4'];
 
 export default function DashboardPage() {
   const { month, year } = getCurrentMonthYear();
@@ -32,64 +32,25 @@ export default function DashboardPage() {
   async function loadData(showRefresh = false) {
     if (showRefresh) setRefreshing(true); else setLoading(true);
     try {
-      // Mock Data to bypass backend failures
-      setSummary({
-        month,
-        year,
-        totalIncome: 12450.00,
-        totalExpense: 4230.50,
-        netSavings: 8219.50,
-        incomeExpenseRatio: 2.94
-      });
-      setTopCats([
-        { categoryName: 'Housing', totalAmount: 2000, transactionCount: 15 },
-        { categoryName: 'Food & Dining', totalAmount: 850, transactionCount: 10 },
-        { categoryName: 'Transportation', totalAmount: 400, transactionCount: 5 },
-        { categoryName: 'Entertainment', totalAmount: 300, transactionCount: 3 }
+      const [summaryRes, topCatsRes, trendsRes, recentTxRes, momRes, forecastRes] = await Promise.all([
+        analyticsApi.monthlySummary(month, year),
+        analyticsApi.topCategories(month, year),
+        analyticsApi.spendingTrends(6),
+        transactionApi.list({ page: 0, size: 5 }),
+        analyticsApi.monthOverMonth(month, year),
+        analyticsApi.spendingForecast().catch(() => null),
       ]);
-      setTrends([
-        { year, month: month - 2, totalIncome: 11000, totalSpending: 4100 },
-        { year, month: month - 1, totalIncome: 11500, totalSpending: 3900 },
-        { year, month, totalIncome: 12450, totalSpending: 4230 }
-      ]);
-      setRecentTx([
-        { id: 1, amount: 2000, type: 'EXPENSE', categoryName: 'Housing', date: '2026-06-15', description: 'Rent Payment' },
-        { id: 2, amount: 4500, type: 'INCOME', categoryName: 'Salary', date: '2026-06-14', description: 'Bi-weekly Paycheck' },
-        { id: 3, amount: 120.50, type: 'EXPENSE', categoryName: 'Food & Dining', date: '2026-06-12', description: 'Whole Foods Market' },
-        { id: 4, amount: 50, type: 'EXPENSE', categoryName: 'Transportation', date: '2026-06-10', description: 'Uber Ride' },
-      ] as any[]);
-      setMom({
-        currentMonth: month,
-        currentYear: year,
-        currentIncome: 12450,
-        currentExpense: 4230,
-        previousIncome: 11500,
-        previousExpense: 3900,
-        incomeChange: 950,
-        expenseChange: 330,
-        incomeChangePercent: 8.26,
-        expenseChangePercent: 8.46
-      });
-      setForecast({
-        forecasts: [
-          { year: 2026, month: 7, forecast: 4300, lowerBound: 4100, upperBound: 4500 },
-          { year: 2026, month: 8, forecast: 4400, lowerBound: 4150, upperBound: 4650 },
-        ],
-        historical: [
-          { year: 2026, month: 5, actual: 4200 },
-          { year: 2026, month: 6, actual: 4230 },
-        ],
-        averageMonthlySpending: 4215,
-        trend: 1.5,
-        confidence: 'HIGH',
-        forecastStartDate: '2026-07-01',
-        forecastEndDate: '2026-08-31',
-        algorithm: 'moving-average'
-      });
+      setSummary(summaryRes);
+      setTopCats(topCatsRes);
+      setTrends(trendsRes);
+      setRecentTx(recentTxRes.content);
+      setMom(momRes);
+      setForecast(forecastRes);
     } catch (error) {
       showErrorWithCorrelation(toast, 'Failed to load dashboard data', error);
     } finally {
       setLoading(false);
+
       setRefreshing(false);
     }
   }
@@ -203,8 +164,8 @@ export default function DashboardPage() {
                 <Tooltip
                   contentStyle={{ backgroundColor: 'var(--tw-bg-opacity, #1e293b)', border: 'none', borderRadius: '8px', color: '#f8fafc' }}
                 />
-                <Area type="monotone" dataKey="Income" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
-                <Area type="monotone" dataKey="Expenses" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
+                <Area type="monotone" dataKey="Income" stroke="#000000" fill="#4ade80" strokeWidth={3} />
+                <Area type="monotone" dataKey="Expenses" stroke="#000000" fill="#f87171" strokeWidth={3} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -229,6 +190,7 @@ export default function DashboardPage() {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#ffffff' }}
                   itemStyle={{ color: '#ffffff' }}
+                  labelStyle={{ color: '#ffffff' }}
                   formatter={(value: number) => formatCurrency(value)}
                 />
               </PieChart>
@@ -254,19 +216,19 @@ export default function DashboardPage() {
                 key={tx.id} 
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.05)' }}
-                className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-ocean-800 bg-white/50 dark:bg-ocean-900/50 backdrop-blur-sm transition-all cursor-pointer group"
+                whileHover={{ x: -2, y: -2, boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)' }}
+                className="flex items-center justify-between p-4 rounded-none border-2 border-black dark:border-white bg-white dark:bg-black transition-all cursor-pointer group"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`h-12 w-12 rounded-full flex items-center justify-center shadow-sm ${tx.type === 'INCOME' ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'}`}>
+                  <div className={`h-12 w-12 rounded-none border-2 border-black dark:border-white shadow-brutal-sm dark:shadow-brutal-dark flex items-center justify-center ${tx.type === 'INCOME' ? 'bg-accent-green text-black' : 'bg-accent-red text-black'}`}>
                     {tx.type === 'INCOME' ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">{tx.description || 'Untitled Transaction'}</p>
-                    <p className="text-xs text-gray-500 dark:text-ocean-300 mt-0.5">{tx.date} • {tx.categoryName}</p>
+                    <p className="font-bold text-black dark:text-white group-hover:text-accent-blue transition-colors">{tx.description || 'Untitled Transaction'}</p>
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-0.5">{tx.date} • {tx.categoryName}</p>
                   </div>
                 </div>
-                <div className={`text-right font-display font-bold text-lg ${tx.type === 'INCOME' ? 'text-teal-600 dark:text-teal-400' : 'text-gray-900 dark:text-white'}`}>
+                <div className={`text-right font-display font-black text-xl ${tx.type === 'INCOME' ? 'text-accent-green' : 'text-black dark:text-white'}`}>
                   {tx.type === 'INCOME' ? '+' : '-'}{formatCurrency(tx.amount)}
                 </div>
               </motion.div>
@@ -295,28 +257,25 @@ function SummaryCard({ title, value, icon, color, highlight, badge }: {
   badge?: { value: number; positive: boolean };
 }) {
   const colorMap: Record<string, string> = {
-    emerald: 'from-teal-400 to-emerald-500 shadow-teal-500/20',
-    red: 'from-red-400 to-rose-500 shadow-red-500/20',
-    brand: 'from-brand-400 to-brand-600 shadow-brand-500/20',
-    ocean: 'from-ocean-400 to-ocean-600 shadow-ocean-500/20',
+    emerald: 'bg-accent-green',
+    red: 'bg-accent-red',
+    brand: 'bg-accent-pink',
+    ocean: 'bg-accent-blue',
   };
 
   return (
-    <div className={`glass-panel p-6 relative overflow-hidden group hover:shadow-glow transition-all duration-300 ${highlight ? 'ring-2 ring-red-400/50' : ''}`}>
-      {/* Decorative background blur */}
-      <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full bg-gradient-to-br ${colorMap[color]} opacity-10 dark:opacity-20 blur-2xl group-hover:scale-150 transition-transform duration-700 ease-out`} />
-      
+    <div className={`card p-6 relative overflow-hidden group hover:-translate-y-1 hover:-translate-x-1 hover:shadow-brutal-lg transition-all duration-200 ${highlight ? 'border-accent-red' : ''}`}>
       <div className="flex items-center justify-between mb-4 relative z-10">
-        <span className="text-sm font-medium text-gray-500 dark:text-ocean-200 tracking-wide">{title}</span>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr ${colorMap[color]} text-white shadow-lg`}>
+        <span className="text-sm font-bold text-black dark:text-white uppercase tracking-widest">{title}</span>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-none ${colorMap[color]} text-black border-2 border-black dark:border-white shadow-brutal-sm dark:shadow-brutal-dark`}>
           {icon}
         </div>
       </div>
-      <p className="text-3xl font-display font-bold text-gray-900 dark:text-white relative z-10 tracking-tight">{value}</p>
+      <p className="text-4xl font-display font-black text-black dark:text-white relative z-10 tracking-tight">{value}</p>
       {badge && (
-        <div className={`flex items-center gap-1.5 mt-2 text-xs font-semibold ${badge.positive ? 'text-teal-600 dark:text-teal-400' : 'text-red-600 dark:text-red-400'} relative z-10`}>
-          {badge.positive ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-          {Math.abs(badge.value).toFixed(1)}% vs last month
+        <div className={`inline-flex items-center gap-1.5 mt-3 px-2 py-1 text-xs font-bold border-2 border-black dark:border-white shadow-brutal-sm dark:shadow-brutal-dark bg-white dark:bg-black text-black dark:text-white`}>
+          {badge.positive ? <ArrowUpRight className="h-4 w-4 text-accent-green" /> : <ArrowDownRight className="h-4 w-4 text-accent-red" />}
+          {Math.abs(badge.value).toFixed(1)}% vs last
         </div>
       )}
     </div>
@@ -325,11 +284,11 @@ function SummaryCard({ title, value, icon, color, highlight, badge }: {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center glass rounded-2xl">
-      <div className="h-16 w-16 mb-4 rounded-full bg-ocean-50 dark:bg-ocean-800/50 flex items-center justify-center shadow-inner">
-        <AlertTriangle className="h-8 w-8 text-ocean-300 dark:text-ocean-500 animate-pulse-soft" />
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center card bg-accent-yellow">
+      <div className="h-16 w-16 mb-4 rounded-none bg-white border-2 border-black dark:border-white flex items-center justify-center shadow-brutal-sm dark:shadow-brutal-dark">
+        <AlertTriangle className="h-8 w-8 text-black" />
       </div>
-      <p className="text-sm font-medium text-gray-500 dark:text-ocean-300 max-w-sm">{message}</p>
+      <p className="text-sm font-bold text-black max-w-sm">{message}</p>
     </div>
   );
 }

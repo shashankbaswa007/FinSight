@@ -18,10 +18,10 @@ import {
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, ComposedChart,
 } from 'recharts';
 
-const PIE_COLORS = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
-const CATEGORY_COLORS = ['#6366f1', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#a855f7', '#84cc16'];
+const PIE_COLORS = ['#facc15', '#f472b6', '#4ade80', '#3b82f6', '#f87171', '#a855f7', '#06b6d4'];
+const CATEGORY_COLORS = ['#facc15', '#4ade80', '#f472b6', '#3b82f6', '#a855f7', '#06b6d4', '#f87171', '#000000', '#ffffff', '#84cc16'];
 
-const tooltipStyle = { backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#f8fafc' };
+const tooltipStyle = { backgroundColor: '#ffffff', border: '2px solid #000000', borderRadius: '0px', color: '#000000', boxShadow: '4px 4px 0px 0px rgba(0,0,0,1)' };
 const isFxCode = (value: string) => /^[A-Z]{3}$/.test(value.trim());
 
 export default function AnalyticsPage() {
@@ -173,11 +173,11 @@ export default function AnalyticsPage() {
       {anomalies.length > 0 && (
         <div className="space-y-3 animate-slide-down">
           {anomalies.map((a, i) => (
-            <div key={i} className="flex items-start gap-3 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/10 hover:shadow-sm transition-shadow">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div key={i} className="flex items-start gap-3 p-4 rounded-none border-2 border-black dark:border-white bg-accent-yellow shadow-brutal-sm dark:shadow-brutal-dark hover:-translate-y-1 hover:-translate-x-1 hover:shadow-brutal transition-all">
+              <AlertTriangle className="h-6 w-6 text-black shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{a.categoryName}: Unusual spending detected</p>
-                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                <p className="text-sm font-black text-black uppercase">{a.categoryName}: Unusual spending detected</p>
+                <p className="text-xs font-bold text-black/80 mt-1">
                   Amount: {formatCurrency(a.amount)} · Z-Score: {a.zScore.toFixed(2)} · Severity: {a.severity}
                 </p>
               </div>
@@ -247,10 +247,10 @@ export default function AnalyticsPage() {
               <YAxis yAxisId="right" orientation="right" tick={{ fill: '#94a3b8', fontSize: 12 }} unit="%" />
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number, name: string) => name === 'SavingsRate' ? `${v}%` : formatCurrency(v)} />
               <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="Income" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
-              <Line yAxisId="left" type="monotone" dataKey="Spending" stroke="#f43f5e" strokeWidth={2.5} dot={{ r: 4 }} />
-              <Line yAxisId="left" type="monotone" dataKey="Savings" stroke="#6366f1" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
-              <Line yAxisId="right" type="monotone" dataKey="SavingsRate" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} name="Savings Rate %" />
+              <Line yAxisId="left" type="monotone" dataKey="Income" stroke="#000000" strokeWidth={3} dot={{ r: 4, fill: '#4ade80' }} />
+              <Line yAxisId="left" type="monotone" dataKey="Spending" stroke="#000000" strokeWidth={3} dot={{ r: 4, fill: '#f87171' }} />
+              <Line yAxisId="left" type="monotone" dataKey="Savings" stroke="#000000" strokeWidth={3} strokeDasharray="5 5" dot={{ r: 4, fill: '#3b82f6' }} />
+              <Line yAxisId="right" type="monotone" dataKey="SavingsRate" stroke="#000000" strokeWidth={3} dot={{ r: 4, fill: '#facc15' }} name="Savings Rate %" />
             </LineChart>
           </ResponsiveContainer>
         ) : (
@@ -272,7 +272,7 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} labelFormatter={(l) => `Day ${l}`} />
-                <Bar dataKey="amount" fill="#6366f1" radius={[3, 3, 0, 0]} name="Spent" />
+                <Bar dataKey="amount" fill="#a855f7" stroke="#000000" strokeWidth={2} radius={[0, 0, 0, 0]} name="Spent" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -292,7 +292,7 @@ export default function AnalyticsPage() {
                 <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                 <YAxis type="category" dataKey="range" tick={{ fill: '#94a3b8', fontSize: 11 }} width={80} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number, name: string) => name === 'count' ? `${v} txns` : formatCurrency(v)} />
-                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} name="Transactions" />
+                <Bar dataKey="count" fill="#06b6d4" stroke="#000000" strokeWidth={2} radius={[0, 0, 0, 0]} name="Transactions" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -315,8 +315,8 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} />
-                <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Spending" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Income" fill="#4ade80" stroke="#000000" strokeWidth={2} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="Spending" fill="#f87171" stroke="#000000" strokeWidth={2} radius={[0, 0, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -451,9 +451,9 @@ export default function AnalyticsPage() {
                 formatter={(v: number, name: string) => name === 'Success Rate' ? `${v}%` : `${v}`}
               />
               <Legend />
-              <Bar yAxisId="left" dataKey="Completed" fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Bar yAxisId="left" dataKey="Failed" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="right" type="monotone" dataKey="SuccessRate" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} name="Success Rate" />
+              <Bar yAxisId="left" dataKey="Completed" fill="#4ade80" stroke="#000000" strokeWidth={2} radius={[0, 0, 0, 0]} />
+              <Bar yAxisId="left" dataKey="Failed" fill="#f87171" stroke="#000000" strokeWidth={2} radius={[0, 0, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="SuccessRate" stroke="#000000" strokeWidth={3} dot={{ r: 4, fill: '#facc15' }} name="Success Rate" />
             </ComposedChart>
           </ResponsiveContainer>
         ) : (
@@ -549,7 +549,7 @@ export default function AnalyticsPage() {
                   formatter={(v: number) => v.toFixed(4)}
                   labelFormatter={(l) => `Date ${l}`}
                 />
-                <Line type="monotone" dataKey="rate" stroke="#10b981" strokeWidth={2.5} dot={{ r: 2 }} />
+                <Line type="monotone" dataKey="rate" stroke="#000000" strokeWidth={3} dot={{ r: 4, fill: '#4ade80' }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
@@ -568,31 +568,31 @@ function KpiCard({ label, value, icon, color, change, positive, subtitle }: {
   change?: number; positive?: boolean; subtitle?: string;
 }) {
   const colorMap: Record<string, string> = {
-    emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-    red: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
-    brand: 'bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400',
-    amber: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
-    violet: 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400',
-    cyan: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400',
+    emerald: 'bg-accent-green',
+    red: 'bg-accent-red',
+    brand: 'bg-accent-pink',
+    amber: 'bg-accent-yellow',
+    violet: 'bg-accent-purple',
+    cyan: 'bg-accent-blue',
   };
 
   return (
-    <div className="card-hover p-4">
+    <div className="card p-4 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-brutal-lg transition-all duration-200">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-gray-500 dark:text-slate-400">{label}</span>
-        <div className={`flex h-7 w-7 items-center justify-center rounded-md ${colorMap[color]}`}>
+        <span className="text-xs font-bold text-black dark:text-white uppercase tracking-widest">{label}</span>
+        <div className={`flex h-8 w-8 items-center justify-center rounded-none border-2 border-black dark:border-white shadow-brutal-sm dark:shadow-brutal-dark text-black ${colorMap[color]}`}>
           {icon}
         </div>
       </div>
-      <p className="text-lg font-bold text-gray-900 dark:text-white truncate">{value}</p>
+      <p className="text-xl font-black text-black dark:text-white truncate tracking-tight">{value}</p>
       {change !== undefined && positive !== undefined && (
-        <div className={`flex items-center gap-0.5 mt-1 text-[11px] font-medium ${positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-          {positive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-          {Math.abs(change).toFixed(1)}% vs last mo
+        <div className={`inline-flex items-center gap-0.5 mt-2 px-1 text-[11px] font-bold border-2 border-black dark:border-white shadow-brutal-sm bg-white dark:bg-black text-black dark:text-white`}>
+          {positive ? <ArrowUpRight className="h-3 w-3 text-accent-green" /> : <ArrowDownRight className="h-3 w-3 text-accent-red" />}
+          {Math.abs(change).toFixed(1)}% vs last
         </div>
       )}
       {subtitle && (
-        <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">{subtitle}</p>
+        <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>
       )}
     </div>
   );
@@ -600,9 +600,9 @@ function KpiCard({ label, value, icon, color, change, positive, subtitle }: {
 
 function EmptyChart({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <BarChart3 className="h-10 w-10 text-gray-300 dark:text-slate-600 mb-3" />
-      <p className="text-sm text-gray-400 dark:text-slate-500">{message}</p>
+    <div className="flex flex-col items-center justify-center py-16 text-center card bg-accent-yellow">
+      <BarChart3 className="h-10 w-10 text-black mb-3" />
+      <p className="text-sm font-bold text-black uppercase">{message}</p>
     </div>
   );
 }
@@ -612,10 +612,10 @@ function DeliveryCard({ title, metrics }: {
   metrics: { total: number; succeeded: number; failed: number; pending: number; successRate: number; averageAttempts: number };
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-slate-700/60 p-4 bg-white/70 dark:bg-slate-900/40">
+    <div className="rounded-none border-2 border-black dark:border-white p-4 bg-white dark:bg-black shadow-brutal-sm dark:shadow-brutal-dark">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white">{title}</p>
-        <span className="text-xs text-gray-400 dark:text-slate-500">Success {metrics.successRate.toFixed(1)}%</span>
+        <p className="text-sm font-black text-black dark:text-white uppercase">{title}</p>
+        <span className="text-xs font-bold text-black dark:text-white bg-accent-yellow px-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">Success {metrics.successRate.toFixed(1)}%</span>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
         <Stat label="Total" value={metrics.total} />
@@ -659,9 +659,9 @@ function DeliverySkeleton() {
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-slate-800/60 px-2.5 py-2">
-      <span className="text-gray-500 dark:text-slate-400">{label}</span>
-      <span className="font-medium text-gray-900 dark:text-slate-100">{value}</span>
+    <div className="flex items-center justify-between rounded-none border-2 border-black dark:border-white bg-white dark:bg-black px-2.5 py-2 shadow-brutal-sm dark:shadow-brutal-dark">
+      <span className="font-bold text-black dark:text-white uppercase text-[10px]">{label}</span>
+      <span className="font-black text-black dark:text-white">{value}</span>
     </div>
   );
 }
