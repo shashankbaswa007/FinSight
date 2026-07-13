@@ -16,7 +16,7 @@ public class UserVectorStoreManager {
 
     private static final Logger log = LoggerFactory.getLogger(UserVectorStoreManager.class);
     private final EmbeddingModel embeddingModel;
-    private final String baseDir = "./data/vector-stores";
+    private String baseDir = "./data/vector-stores";
     private final Map<Long, VectorStore> storeCache = new ConcurrentHashMap<>();
 
     public UserVectorStoreManager(EmbeddingModel embeddingModel) {

@@ -102,11 +102,9 @@ public class AiService {
     }
 
     /**
-     * RAG-based Financial Advisor chat response.
+     * Retrieves context documents from the user's vector store via similarity search.
      */
-    @CircuitBreaker(name = "ollamaAi", fallbackMethod = "fallbackFinancialAdvice")
-    public String getFinancialAdvice(Long userId, String userMessage, String contextData) {
-        // RAG Retrieval Phase
+    private String retrieveRagContext(Long userId, String userMessage) {
         VectorStore vectorStore = userVectorStoreManager.getVectorStore(userId);
         List<Document> similarDocuments = vectorStore.similaritySearch(
             SearchRequest.builder()
@@ -115,12 +113,17 @@ public class AiService {
                 .filterExpression("userId == '" + userId + "'")
                 .build()
         );
-        
-        String retrievedContext = similarDocuments.stream()
+        return similarDocuments.stream()
                 .map(Document::getText)
                 .collect(Collectors.joining("\n- ", "- ", ""));
+    }
 
-        String systemPrompt = "You are FinSight's AI Financial Advisor. FinSight is a modern personal finance management application that allows users to track their budgets, record transactions, visualize analytics, and reconcile accounts. Be concise, helpful, and professional.\n" +
+    /**
+     * Builds the system prompt for the AI Financial Advisor.
+     * Single source of truth — used by both sync and streaming endpoints.
+     */
+    private String buildSystemPrompt(String contextData, String retrievedContext) {
+        return "You are FinSight's AI Financial Advisor. FinSight is a modern personal finance management application that allows users to track their budgets, record transactions, visualize analytics, and reconcile accounts. Be concise, helpful, and professional.\n" +
                 "You have access to the user's current month summary and historical transaction context retrieved from their database.\n" +
                 "Answer the user's questions based on the provided context or your knowledge about FinSight's features. If the context doesn't contain the answer to a specific transaction query, say you don't know.\n" +
                 "CRITICAL RULES:\n" +
@@ -131,6 +134,15 @@ public class AiService {
                 "5. Use paragraph breaks heavily—never output a paragraph longer than two sentences.\n\n" +
                 "=== CURRENT MONTH SUMMARY ===\n" + contextData + "\n\n" +
                 "=== HISTORICAL TRANSACTION CONTEXT ===\n" + retrievedContext;
+    }
+
+    /**
+     * RAG-based Financial Advisor chat response.
+     */
+    @CircuitBreaker(name = "ollamaAi", fallbackMethod = "fallbackFinancialAdvice")
+    public String getFinancialAdvice(Long userId, String userMessage, String contextData) {
+        String retrievedContext = retrieveRagContext(userId, userMessage);
+        String systemPrompt = buildSystemPrompt(contextData, retrievedContext);
 
         return chatClient.prompt()
                 .system(systemPrompt)
@@ -146,31 +158,8 @@ public class AiService {
 
     @CircuitBreaker(name = "ollamaAi", fallbackMethod = "fallbackFinancialAdviceStream")
     public reactor.core.publisher.Flux<String> getFinancialAdviceStream(Long userId, String userMessage, String contextData) {
-        // RAG Retrieval Phase
-        VectorStore vectorStore = userVectorStoreManager.getVectorStore(userId);
-        List<Document> similarDocuments = vectorStore.similaritySearch(
-            SearchRequest.builder()
-                .query(userMessage)
-                .topK(5)
-                .filterExpression("userId == '" + userId + "'")
-                .build()
-        );
-        
-        String retrievedContext = similarDocuments.stream()
-                .map(Document::getText)
-                .collect(Collectors.joining("\n- ", "- ", ""));
-
-        String systemPrompt = "You are FinSight's AI Financial Advisor. FinSight is a modern personal finance management application that allows users to track their budgets, record transactions, visualize analytics, and reconcile accounts. Be concise, helpful, and professional.\n" +
-                "You have access to the user's current month summary and historical transaction context retrieved from their database.\n" +
-                "Answer the user's questions based on the provided context or your knowledge about FinSight's features. If the context doesn't contain the answer to a specific transaction query, say you don't know.\n" +
-                "CRITICAL RULES:\n" +
-                "1. ONLY answer the user's immediate question. DO NOT simulate a conversation. DO NOT write fake user follow-up questions.\n" +
-                "2. Keep your answers UNDER 3 SENTENCES unless specifically asked for a detailed guide. Be extremely concise.\n" +
-                "3. Always format your responses using Markdown. You MUST use **bullet points** when listing more than 2 items, features, or steps.\n" +
-                "4. Use **bold text** to highlight key terms, feature names, or important concepts.\n" +
-                "5. Use paragraph breaks heavily—never output a paragraph longer than two sentences.\n\n" +
-                "=== CURRENT MONTH SUMMARY ===\n" + contextData + "\n\n" +
-                "=== HISTORICAL TRANSACTION CONTEXT ===\n" + retrievedContext;
+        String retrievedContext = retrieveRagContext(userId, userMessage);
+        String systemPrompt = buildSystemPrompt(contextData, retrievedContext);
 
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
