@@ -11,20 +11,8 @@ export interface TransactionFilters {
 }
 
 export const transactionApi = {
-  list: (filters: TransactionFilters = {}) => {
-    return Promise.resolve({
-      content: [
-        { id: 1, amount: 2000, type: 'EXPENSE', categoryName: 'Housing', date: '2026-06-15', description: 'Rent Payment' },
-        { id: 2, amount: 4500, type: 'INCOME', categoryName: 'Salary', date: '2026-06-14', description: 'Bi-weekly Paycheck' },
-        { id: 3, amount: 120.50, type: 'EXPENSE', categoryName: 'Food & Dining', date: '2026-06-12', description: 'Whole Foods Market' },
-        { id: 4, amount: 50, type: 'EXPENSE', categoryName: 'Transportation', date: '2026-06-10', description: 'Uber Ride' },
-      ],
-      totalElements: 4,
-      totalPages: 1,
-      size: 10,
-      number: 0
-    } as unknown as PagedResponse<TransactionResponse>);
-  },
+  list: (filters: TransactionFilters = {}) =>
+    api.get<PagedResponse<TransactionResponse>>('/transactions', { params: filters }).then((r) => r.data),
 
   create: (data: TransactionRequest) =>
     api.post<TransactionResponse>('/transactions', data).then((r) => r.data),
@@ -35,3 +23,4 @@ export const transactionApi = {
   delete: (id: number) =>
     api.delete(`/transactions/${id}`).then((r) => r.data),
 };
+
