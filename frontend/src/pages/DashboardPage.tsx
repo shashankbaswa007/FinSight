@@ -8,6 +8,7 @@ import type { MonthlySummaryResponse, TopCategoryResponse, SpendingTrendResponse
 import { formatCurrency, getCurrentMonthYear, getMonthName } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 import { showErrorWithCorrelation } from '../utils/errorHandler';
+import { useTheme } from '../context/ThemeContext';
 import SpendingForecastChart from '../components/analytics/SpendingForecastChart';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -17,6 +18,7 @@ import {
 const COLORS = ['#facc15', '#f472b6', '#4ade80', '#3b82f6', '#f87171', '#a855f7', '#06b6d4'];
 
 export default function DashboardPage() {
+  const { theme } = useTheme();
   const { month, year } = getCurrentMonthYear();
   const { toast } = useToast();
   const [summary, setSummary] = useState<MonthlySummaryResponse | null>(null);
@@ -179,18 +181,18 @@ export default function DashboardPage() {
           {pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value" label={{ fill: '#ffffff', fontSize: 12, fontWeight: 500 }}>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value" label={{ fill: theme === 'dark' ? '#ffffff' : '#000000', fontSize: 12, fontWeight: 500 }}>
                   {pieData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
                 <Legend
-                  formatter={(value) => <span className="text-xs font-medium text-white">{value}</span>}
+                  formatter={(value) => <span className={`text-xs font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{value}</span>}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#ffffff' }}
-                  itemStyle={{ color: '#ffffff' }}
-                  labelStyle={{ color: '#ffffff' }}
+                  contentStyle={{ backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', border: 'none', borderRadius: '8px', color: theme === 'dark' ? '#ffffff' : '#000000' }}
+                  itemStyle={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}
+                  labelStyle={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}
                   formatter={(value: number) => formatCurrency(value)}
                 />
               </PieChart>
