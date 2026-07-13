@@ -5,100 +5,81 @@
 @layer base {
   :root {
     --color-bg: 255 255 255;
-    --color-surface: 249 250 251;
-    --color-surface-hover: 243 244 246;
-    --color-border: 229 231 235;
-    --color-text: 17 24 39;
-    --color-text-secondary: 107 114 128;
-    --color-success: 20 184 166; /* Teal 500 */
-    --color-danger: 239 68 68;
-    --color-warning: 245 158 11;
+    --color-surface: 244 244 245;
+    --color-surface-hover: 228 228 231;
+    --color-border: 0 0 0;
+    --color-text: 0 0 0;
+    --color-text-secondary: 82 82 91;
+    --color-success: 74 222 128;
+    --color-danger: 248 113 113;
+    --color-warning: 250 204 21;
   }
 
   .dark {
-    --color-bg: 8 47 73; /* Ocean 950 */
-    --color-surface: 12 74 110; /* Ocean 900 */
-    --color-surface-hover: 7 89 133; /* Ocean 800 */
-    --color-border: 7 89 133;
-    --color-text: 240 249 255; /* Ocean 50 */
-    --color-text-secondary: 186 230 253; /* Ocean 200 */
-    --color-success: 45 212 191; /* Teal 400 */
-    --color-danger: 248 113 113; /* Red 400 */
-    --color-warning: 251 191 36; /* Amber 400 */
+    --color-bg: 0 0 0;
+    --color-surface: 24 24 27;
+    --color-surface-hover: 39 39 42;
+    --color-border: 255 255 255;
+    --color-text: 255 255 255;
+    --color-text-secondary: 161 161 170;
+    --color-success: 74 222 128;
+    --color-danger: 248 113 113;
+    --color-warning: 250 204 21;
   }
 
   body {
-    @apply bg-white dark:bg-ocean-950 text-gray-900 dark:text-ocean-50 font-sans transition-colors duration-300;
-  }
-  
-  /* Apply mesh background to body in dark mode */
-  .dark body {
-    @apply bg-mesh-dark bg-fixed;
+    @apply bg-white dark:bg-black text-black dark:text-white font-sans transition-colors duration-300;
   }
 }
 
 @layer components {
-  /* Glassmorphism primitives */
+  /* Brutalist primitives */
   .glass {
-    @apply bg-white/80 dark:bg-ocean-900/60 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-glass-sm;
+    @apply bg-white dark:bg-black border-2 border-black dark:border-white shadow-brutal dark:shadow-brutal-dark rounded-none;
   }
 
   .glass-panel {
-    @apply bg-white/90 dark:bg-ocean-900/70 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-glass rounded-2xl;
+    @apply bg-white dark:bg-black border-2 border-black dark:border-white shadow-brutal-lg dark:shadow-brutal-lg-dark rounded-none;
   }
 
   .card {
-    @apply bg-white dark:bg-ocean-900 border border-gray-200 dark:border-ocean-800 rounded-2xl shadow-sm
-           transition-all duration-300;
+    @apply bg-white dark:bg-black border-2 border-black dark:border-white rounded-none shadow-brutal dark:shadow-brutal-dark transition-all duration-200;
   }
 
   .card-hover {
-    @apply card hover:shadow-lg hover:-translate-y-1 hover:border-brand-300 dark:hover:border-brand-700 hover:shadow-brand-500/10;
+    @apply card hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none dark:hover:shadow-none;
   }
 
   .btn-primary {
-    @apply bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 
-           text-white font-medium px-5 py-2.5 rounded-xl transition-all duration-300 
-           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-ocean-950
-           disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97] hover:shadow-glow;
+    @apply bg-brand-500 hover:bg-brand-400 text-white font-bold px-6 py-3 border-2 border-black dark:border-white shadow-brutal dark:shadow-brutal-dark transition-all duration-200 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none rounded-none;
   }
 
   .btn-secondary {
-    @apply bg-gray-100 dark:bg-ocean-800 hover:bg-gray-200 dark:hover:bg-ocean-700 
-           text-gray-700 dark:text-ocean-100 font-medium px-5 py-2.5 rounded-xl transition-all duration-300 
-           focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-ocean-950
-           active:scale-[0.97] border border-transparent dark:border-ocean-700 hover:border-gray-300 dark:hover:border-ocean-600;
+    @apply bg-accent-yellow hover:bg-yellow-400 text-black font-bold px-6 py-3 border-2 border-black dark:border-white shadow-brutal dark:shadow-brutal-dark transition-all duration-200 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none rounded-none;
   }
 
   .btn-danger {
-    @apply bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 
-           text-white font-medium px-5 py-2.5 rounded-xl transition-all duration-300 
-           focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-ocean-950
-           active:scale-[0.97] hover:shadow-lg hover:shadow-red-500/25;
+    @apply bg-accent-red hover:bg-red-500 text-black font-bold px-6 py-3 border-2 border-black dark:border-white shadow-brutal dark:shadow-brutal-dark transition-all duration-200 active:translate-x-[4px] active:translate-y-[4px] active:shadow-none rounded-none;
   }
 
   .input-field {
-    @apply w-full px-4 py-3 bg-white/50 dark:bg-ocean-900/50 backdrop-blur-sm border border-gray-200 dark:border-ocean-700
-           rounded-xl text-gray-900 dark:text-ocean-50 placeholder-gray-400 dark:placeholder-ocean-400
-           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
-           transition-all duration-300 hover:bg-white dark:hover:bg-ocean-900;
+    @apply w-full px-4 py-3 bg-white dark:bg-black border-2 border-black dark:border-white text-black dark:text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none shadow-brutal dark:shadow-brutal-dark transition-all duration-200 rounded-none;
   }
 
   .badge {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium tracking-wide uppercase shadow-sm;
+    @apply inline-flex items-center px-3 py-1 text-xs font-bold uppercase border-2 border-black dark:border-white shadow-brutal-sm dark:shadow-brutal-dark rounded-none;
   }
 
   .badge-income {
-    @apply badge bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800;
+    @apply badge bg-accent-green text-black dark:border-black;
   }
 
   .badge-expense {
-    @apply badge bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800;
+    @apply badge bg-accent-red text-black dark:border-black;
   }
 
-  /* Skeleton loading shimmer */
   .skeleton {
-    @apply bg-gray-200 dark:bg-ocean-800 rounded-xl animate-pulse;
+    @apply bg-gray-200 dark:bg-zinc-800 border-2 border-black dark:border-white rounded-none;
   }
 
   /* Page enter animation */
