@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Search, Filter, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, ChevronLeft, ChevronRight, Pencil, Trash2, Upload } from 'lucide-react';
 import { transactionApi } from '../api/transactions';
 import { categoryApi } from '../api/categories';
 import type { TransactionResponse, CategoryResponse } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { useToast } from '../context/ToastContext';
 import Modal from '../components/ui/Modal';
+import BulkUploadModal from '../components/ui/BulkUploadModal';
 
 interface Filters {
   page: number;
@@ -27,6 +28,7 @@ export default function TransactionsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editing, setEditing] = useState<TransactionResponse | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TransactionResponse | null>(null);
   const [saving, setSaving] = useState(false);
@@ -108,9 +110,14 @@ export default function TransactionsPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Transactions</h1>
           <p className="text-gray-500 dark:text-slate-400 mt-1">Manage your income and expenses</p>
         </div>
-        <button onClick={openCreate} className="btn-primary flex items-center gap-2 self-start">
-          <Plus className="h-4 w-4" /> Add Transaction
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setBulkOpen(true)} className="btn-secondary flex items-center gap-2 self-start">
+            <Upload className="h-4 w-4" /> Bulk Upload
+          </button>
+          <button onClick={openCreate} className="btn-primary flex items-center gap-2 self-start">
+            <Plus className="h-4 w-4" /> Add Transaction
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -260,6 +267,13 @@ export default function TransactionsPage() {
           <button onClick={handleDelete} className="btn-danger">Delete</button>
         </div>
       </Modal>
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal 
+        open={bulkOpen} 
+        onClose={() => setBulkOpen(false)} 
+        onSuccess={() => fetchTransactions()} 
+      />
     </div>
   );
 }
