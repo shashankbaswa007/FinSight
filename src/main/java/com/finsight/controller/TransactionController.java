@@ -21,6 +21,12 @@ import com.finsight.dto.MonthlyTransactionSummary;
 import com.finsight.dto.PagedResponse;
 import com.finsight.dto.TransactionRequest;
 import com.finsight.dto.TransactionResponse;
+import com.finsight.dto.BulkUploadPreviewResponse;
+import com.finsight.dto.BulkUploadCommitResponse;
+import com.finsight.service.BulkUploadService;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import com.finsight.model.TransactionType;
 import com.finsight.service.TransactionService;
 import com.finsight.util.SecurityUtil;
@@ -40,10 +46,12 @@ public class TransactionController {
 
     private final TransactionService transactionService;
     private final SecurityUtil securityUtil;
+    private final BulkUploadService bulkUploadService;
 
-    public TransactionController(TransactionService transactionService, SecurityUtil securityUtil) {
+    public TransactionController(TransactionService transactionService, SecurityUtil securityUtil, BulkUploadService bulkUploadService) {
         this.transactionService = transactionService;
         this.securityUtil = securityUtil;
+        this.bulkUploadService = bulkUploadService;
     }
 
     @PostMapping
@@ -105,6 +113,32 @@ public class TransactionController {
         Long userId = getUserId();
         MonthlyTransactionSummary summary = transactionService.getMonthlyTransactionSummary(userId, month, year);
         return ResponseEntity.ok(summary);
+    }
+
+    @GetMapping("/bulk/template")
+    @Operation(summary = "Download bulk upload template", description = "Downloads an Excel template for bulk transaction upload")
+    public ResponseEntity<byte[]> downloadTemplate() {
+        byte[] template = bulkUploadService.generateTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "transactions_template.xlsx");
+        return new ResponseEntity<>(template, headers, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/bulk/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Preview bulk upload", description = "Parses an Excel file and returns valid and invalid rows")
+    public ResponseEntity<BulkUploadPreviewResponse> previewUpload(@RequestParam("file") MultipartFile file) {
+        Long userId = getUserId();
+        BulkUploadPreviewResponse response = bulkUploadService.parseAndValidate(userId, file);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/bulk/commit")
+    @Operation(summary = "Commit bulk upload", description = "Commits the valid rows from a bulk upload preview")
+    public ResponseEntity<BulkUploadCommitResponse> commitUpload(@RequestBody BulkUploadPreviewResponse preview) {
+        Long userId = getUserId();
+        BulkUploadCommitResponse response = bulkUploadService.commitUpload(userId, preview);
+        return ResponseEntity.ok(response);
     }
 
     private @NonNull Long getUserId() {
