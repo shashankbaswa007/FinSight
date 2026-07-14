@@ -1,5 +1,5 @@
 import api from './axios';
-import type { TransactionRequest, TransactionResponse, PagedResponse } from '../types';
+import type { TransactionRequest, TransactionResponse, PagedResponse, BulkUploadPreviewResponse, BulkUploadCommitResponse } from '../types';
 
 export interface TransactionFilters {
   type?: 'INCOME' | 'EXPENSE';
@@ -22,5 +22,19 @@ export const transactionApi = {
 
   delete: (id: number) =>
     api.delete(`/transactions/${id}`).then((r) => r.data),
+
+  bulkDownloadTemplate: () =>
+    api.get('/transactions/bulk/template', { responseType: 'blob' }).then(r => r.data as Blob),
+
+  bulkPreview: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<BulkUploadPreviewResponse>('/transactions/bulk/preview', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data);
+  },
+
+  bulkCommit: (preview: BulkUploadPreviewResponse) =>
+    api.post<BulkUploadCommitResponse>('/transactions/bulk/commit', preview).then(r => r.data),
 };
 

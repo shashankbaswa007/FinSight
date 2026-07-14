@@ -55,6 +55,39 @@ export interface TransactionResponse {
   createdAt: string;
 }
 
+/* ───── Bulk Upload ───── */
+export interface BulkUploadRowDto {
+  rowNumber: number;
+  amount: number;
+  type: string;
+  categoryName: string | null;
+  categoryId: number | null;
+  description: string | null;
+  date: string;
+}
+
+export interface BulkUploadErrorDto {
+  rowNumber: number;
+  rawData: string;
+  errors: string[];
+}
+
+export interface BulkUploadPreviewResponse {
+  validRows: BulkUploadRowDto[];
+  errorRows: BulkUploadErrorDto[];
+  totalRows: number;
+  validCount: number;
+  errorCount: number;
+  duplicateRows: BulkUploadRowDto[];
+  duplicateCount: number;
+}
+
+export interface BulkUploadCommitResponse {
+  createdCount: number;
+  skippedCount: number;
+  message: string;
+}
+
 /* ───── Budget ───── */
 export interface BudgetRequest {
   categoryId: number;
