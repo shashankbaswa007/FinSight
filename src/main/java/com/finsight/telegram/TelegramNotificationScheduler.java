@@ -8,11 +8,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@Profile("!test")
 public class TelegramNotificationScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(TelegramNotificationScheduler.class);
