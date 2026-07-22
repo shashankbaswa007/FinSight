@@ -48,7 +48,7 @@ export default function LoginPage() {
       opacity: 1,
       transition: { 
         staggerChildren: 0.1,
-        delayChildren: 0.2
+        delayChildren: 0.4
       }
     }
   };
@@ -85,9 +85,9 @@ export default function LoginPage() {
           className="space-y-6 max-w-xl"
         >
           <h1 className="text-6xl xl:text-7xl font-black leading-[1.0] tracking-tighter text-black uppercase">
-            Master your wealth with <span className="bg-accent-blue text-white px-2 mt-2 inline-block shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-4 border-black">brute force.</span>
+            Master your wealth with <span className="bg-accent-blue text-black px-2 mt-2 inline-block shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-4 border-black">brute force.</span>
           </h1>
-          <p className="text-xl text-black font-bold leading-relaxed border-l-4 border-black pl-4">
+          <p className="text-xl text-black font-bold leading-relaxed border-l-4 border-black pl-4 max-w-lg">
             Experience the future of personal finance. No fluff, just hard numbers, autonomous reconciliation, and crystal clear analytics.
           </p>
         </motion.div>
@@ -130,7 +130,7 @@ export default function LoginPage() {
             <span className="text-4xl font-black text-black dark:text-white tracking-tighter uppercase">FinSight</span>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="mb-10 text-center lg:text-left">
+          <motion.div variants={itemVariants} className="mt-8 mb-10 text-center lg:text-left">
             <h2 className="text-4xl font-black text-black dark:text-white mb-3 tracking-tighter uppercase">Enter.</h2>
             <p className="text-black dark:text-white font-bold bg-accent-blue inline-block px-2 py-1 border-2 border-black">Access your workspace</p>
           </motion.div>
@@ -155,7 +155,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-14 pr-4 py-4 bg-white dark:bg-black border-4 border-black dark:border-white text-black dark:text-white focus:outline-none focus:translate-x-[4px] focus:translate-y-[4px] focus:shadow-none shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] transition-all font-bold placeholder:text-gray-400"
+                  className="w-full pl-14 pr-4 py-4 bg-white dark:bg-black border-4 border-black dark:border-white text-black dark:text-white focus:outline-none focus:bg-yellow-50 dark:focus:bg-yellow-900/30 focus:translate-x-[8px] focus:translate-y-[8px] focus:shadow-none shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] transition-all font-bold placeholder:text-gray-400"
                   placeholder="you@example.com"
                   required
                 />
@@ -173,7 +173,7 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-14 pr-4 py-4 bg-white dark:bg-black border-4 border-black dark:border-white text-black dark:text-white focus:outline-none focus:translate-x-[4px] focus:translate-y-[4px] focus:shadow-none shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] transition-all font-bold placeholder:text-gray-400"
+                  className="w-full pl-14 pr-4 py-4 bg-white dark:bg-black border-4 border-black dark:border-white text-black dark:text-white focus:outline-none focus:bg-yellow-50 dark:focus:bg-yellow-900/30 focus:translate-x-[8px] focus:translate-y-[8px] focus:shadow-none shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] transition-all font-bold placeholder:text-gray-400"
                   placeholder="••••••••"
                   required
                 />
@@ -184,7 +184,7 @@ export default function LoginPage() {
               <button 
                 type="submit" 
                 disabled={loading} 
-                className="w-full bg-black dark:bg-white text-white dark:text-black py-4 px-4 border-4 border-black dark:border-white font-black transition-all flex items-center justify-center gap-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] hover:bg-accent-yellow hover:text-black active:translate-x-[4px] active:translate-y-[4px] active:shadow-none dark:active:shadow-none uppercase tracking-widest text-lg"
+                className="w-full bg-black dark:bg-white text-white dark:text-black py-4 px-4 border-4 border-black dark:border-white font-black transition-all flex items-center justify-center gap-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] hover:bg-accent-yellow hover:text-black active:translate-x-[8px] active:translate-y-[8px] active:shadow-none dark:active:shadow-none uppercase tracking-widest text-lg"
               >
                 {loading ? (
                   <Loader2 className="h-6 w-6 animate-spin" />
@@ -199,9 +199,9 @@ export default function LoginPage() {
                 type="button"
                 onClick={handleDemoLogin}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 border-4 border-black dark:border-white bg-accent-pink px-4 py-4 text-base font-black text-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all duration-200 uppercase tracking-widest mt-4"
+                className="w-full flex items-center justify-center gap-2 border-4 border-black dark:border-white bg-accent-pink px-4 py-4 text-base font-black text-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:bg-white hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] active:translate-x-[8px] active:translate-y-[8px] active:shadow-none transition-all duration-200 uppercase tracking-widest mt-4"
               >
-                <Layers className="h-6 w-6" />
+                <Layers className="h-6 w-6" strokeWidth={3} />
                 Demo Account
               </button>
             </motion.div>
