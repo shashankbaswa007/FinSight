@@ -19,6 +19,7 @@ Built with **Java Spring Boot** and **React**, the platform is designed as a res
 ## ✨ Key Features
 
 - 🧠 **Local AI Integration (Spring AI + Ollama)**: Privacy-first transaction categorization and conversational financial advice using `phi3` and RAG (Retrieval-Augmented Generation).
+- 📱 **Telegram Bot Integration**: A dedicated chatbot for requesting financial advice directly from your local AI and receiving proactive weekly transaction summaries.
 - 🎨 **Neo-Brutalist UI**: A striking, accessible, and high-contrast user interface featuring dynamic dark mode and micro-animations.
 - 🚀 **Bulk Excel Imports**: Support for processing up to 1000 transactions at a time via `.xlsx` files, complete with duplicate detection and error validation.
 - 🔒 **Banking-Grade Security**: At-rest AES-256 encryption for sensitive transaction data via Jasypt, plus secure JWT authentication.

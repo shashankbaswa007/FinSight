@@ -73,3 +73,15 @@ Standard dashboards provide raw data but do not offer actionable advice on how t
    - The system performs a similarity search over the user's specific data (strictly isolated by `user_id` to prevent cross-contamination).
    - The context is injected into a prompt for the `phi3` local LLM.
    - The AI responds with personalized advice, pointing out specific anomalous transactions or trend deviations that caused the budget breach.
+
+---
+
+## 6. Proactive Assistant via Telegram
+
+### The Challenge
+Users shouldn't have to log into a web dashboard every single day just to know where they stand on their spending.
+
+### The FinSight Workflow
+1. **Account Linking**: The user generates a secure, one-time 6-digit code in the FinSight settings and messages it to the FinSight Telegram Bot.
+2. **Weekly Summaries**: A scheduled cron job (`TelegramNotificationScheduler`) pulls the user's monthly income, expenses, and balance, sending a beautifully formatted message to their Telegram every Sunday morning.
+3. **Conversational Interface**: Since the Telegram bot is directly wired into the `AiService`, users can text the bot questions like *"How much have I spent on groceries this month?"* and get instant RAG-powered answers right on their phone.

@@ -66,6 +66,12 @@ FinSight explicitly rejects the use of third-party APIs (like OpenAI) to ensure 
 - **Sandboxing**: Similarity searches (`SearchRequest`) strictly filter vectors by `userId` to ensure data isolation.
 - **Concurrency**: Asynchronous AI tasks (like auto-categorizing a transaction) are wrapped in `TransactionSynchronizationManager.registerSynchronization` to prevent race conditions where the AI tries to read a transaction before the database has fully committed it.
 
+### Telegram Bot Integration (Long Polling & Scheduling)
+FinSight includes a deeply integrated Telegram bot built via `telegrambots-spring-boot-starter`.
+- **Linking Protocol**: Users generate a secure 6-digit code in the UI which is verified when they message the bot, linking their `TelegramChatId` to their FinSight user account.
+- **Long Polling**: The bot securely listens for incoming Telegram messages without requiring inbound port forwarding (perfect for local containerized deployment) and pipes queries directly to the internal `AiService`.
+- **Scheduled Cron Jobs**: `@Scheduled(cron = "0 0 10 * * SUN")` automatically queries the database every Sunday morning to push proactive weekly summaries to all linked users.
+
 ### Circuit Breaking & Resilience
 Financial systems must integrate with external banking or exchange rate APIs, which are notoriously unreliable. FinSight uses **Resilience4j**.
 - **Circuit Breaker**: If an external FX API fails 50% of the time, the circuit "opens" to prevent cascading timeouts, falling back to stale Redis cache data.
