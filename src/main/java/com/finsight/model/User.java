@@ -58,6 +58,13 @@ public class User {
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
+    // ──── Telegram Integration ────
+    @Column(name = "telegram_chat_id", unique = true)
+    private Long telegramChatId;
+
+    @Column(name = "telegram_linking_code", length = 6)
+    private String telegramLinkingCode;
+
     public User() {}
 
     public User(Long id, String name, String email, String password, Role role,
@@ -138,6 +145,12 @@ public class User {
     public LocalDateTime getLastLogin() { return lastLogin; }
     public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
 
+    public Long getTelegramChatId() { return telegramChatId; }
+    public void setTelegramChatId(Long telegramChatId) { this.telegramChatId = telegramChatId; }
+
+    public String getTelegramLinkingCode() { return telegramLinkingCode; }
+    public void setTelegramLinkingCode(String telegramLinkingCode) { this.telegramLinkingCode = telegramLinkingCode; }
+
     // ──── Builder ────
 
     public static UserBuilder builder() { return new UserBuilder(); }
@@ -156,6 +169,8 @@ public class User {
         private String deletionReason;
         private LocalDateTime hardDeleteScheduledAt;
         private LocalDateTime lastLogin;
+        private Long telegramChatId;
+        private String telegramLinkingCode;
 
         public UserBuilder id(Long id) { this.id = id; return this; }
         public UserBuilder name(String name) { this.name = name; return this; }
@@ -178,6 +193,12 @@ public class User {
         public UserBuilder lastLogin(LocalDateTime lastLogin) { 
             this.lastLogin = lastLogin; return this; 
         }
+        public UserBuilder telegramChatId(Long telegramChatId) {
+            this.telegramChatId = telegramChatId; return this;
+        }
+        public UserBuilder telegramLinkingCode(String telegramLinkingCode) {
+            this.telegramLinkingCode = telegramLinkingCode; return this;
+        }
 
         public User build() {
             User user = new User(id, name, email, password, role, createdAt, transactions, budgets);
@@ -186,6 +207,8 @@ public class User {
             user.deletionReason = this.deletionReason;
             user.hardDeleteScheduledAt = this.hardDeleteScheduledAt;
             user.lastLogin = this.lastLogin;
+            user.telegramChatId = this.telegramChatId;
+            user.telegramLinkingCode = this.telegramLinkingCode;
             return user;
         }
     }

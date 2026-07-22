@@ -3,6 +3,7 @@ import { Bell, Lock, Save, User } from 'lucide-react';
 import { profileApi } from '../api/profile';
 import { reconciliationApi } from '../api/reconciliation';
 import { notificationsApi } from '../api/notifications';
+import { telegramApi } from '../api/telegram';
 import { getCorrelationId } from '../api/axios';
 import type {
   NotificationPreferencesResponse,
@@ -27,6 +28,10 @@ export default function SettingsPage() {
   const [savingPw, setSavingPw] = useState(false);
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
+  
+  const [telegramCode, setTelegramCode] = useState<string | null>(null);
+  const [telegramBotUsername, setTelegramBotUsername] = useState<string | null>(null);
+  const [generatingTelegramCode, setGeneratingTelegramCode] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +137,20 @@ export default function SettingsPage() {
     updatePrefs('budgetAlertThreshold', clamped);
   }
 
+  async function handleGenerateTelegramCode() {
+    setGeneratingTelegramCode(true);
+    try {
+      const res = await telegramApi.generateLinkCode();
+      setTelegramCode(res.code);
+      setTelegramBotUsername(res.botUsername);
+      toast('success', 'Telegram linking code generated');
+    } catch {
+      toast('error', 'Failed to generate Telegram code');
+    } finally {
+      setGeneratingTelegramCode(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -173,6 +192,42 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Telegram section */}
+      <div className="card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="h-5 w-5 flex items-center justify-center text-brand-600 font-bold">T</span>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Telegram Integration</h3>
+        </div>
+        <p className="text-sm text-gray-700 dark:text-slate-300 mb-4">
+          Link your Telegram account to chat with the FinSight AI and receive weekly summaries.
+        </p>
+        
+        {!telegramCode ? (
+          <button
+            onClick={handleGenerateTelegramCode}
+            disabled={generatingTelegramCode}
+            className="btn-primary"
+          >
+            {generatingTelegramCode ? 'Generating...' : 'Link Telegram Account'}
+          </button>
+        ) : (
+          <div className="bg-brand-50 dark:bg-brand-900/30 border border-brand-200 dark:border-brand-800 rounded-lg p-4">
+            <p className="text-sm text-gray-800 dark:text-slate-200 mb-2">
+              1. Open Telegram and search for <strong>@{telegramBotUsername}</strong>
+            </p>
+            <p className="text-sm text-gray-800 dark:text-slate-200 mb-2">
+              2. Send the following code to the bot:
+            </p>
+            <div className="text-2xl font-mono font-bold tracking-widest text-brand-600 dark:text-brand-400 py-2">
+              {telegramCode}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
+              Code expires when you generate a new one. Once linked, this code will be cleared.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Password section */}
